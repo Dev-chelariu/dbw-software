@@ -8,6 +8,7 @@ import com.example.software.views.about.AboutView;
 import com.example.software.views.dashboard.DashboardView;
 import com.example.software.views.map.MapView;
 import com.example.software.views.spreadsheet.SpreadsheetView;
+import com.vaadin.flow.component.accordion.Accordion;
 import com.vaadin.flow.component.applayout.AppLayout;
 import com.vaadin.flow.component.applayout.DrawerToggle;
 import com.vaadin.flow.component.avatar.Avatar;
