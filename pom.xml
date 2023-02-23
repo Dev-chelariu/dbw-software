@@ -97,7 +97,11 @@
             <groupId>com.vaadin</groupId>
             <artifactId>vaadin-spreadsheet-flow</artifactId>
         </dependency>
-
+        <dependency>
+            <groupId>org.vaadin.crudui</groupId>
+            <artifactId>crudui</artifactId>
+            <version>6.2.0</version>
+        </dependency>
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>

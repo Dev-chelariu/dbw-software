@@ -8,18 +8,23 @@ import com.example.software.views.dashboard.DashboardView;
 import com.example.software.views.email.EmailView;
 import com.example.software.views.employee.EmployeesView;
 import com.example.software.views.map.MapView;
+import com.example.software.views.product.ProductsView;
 import com.example.software.views.spreadsheet.SpreadsheetView;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.applayout.AppLayout;
 import com.vaadin.flow.component.applayout.DrawerToggle;
 import com.vaadin.flow.component.avatar.Avatar;
+import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.contextmenu.MenuItem;
 import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.menubar.MenuBar;
 import com.vaadin.flow.component.orderedlayout.Scroller;
+import com.vaadin.flow.dom.ThemeList;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.server.auth.AccessAnnotationChecker;
+import com.vaadin.flow.theme.lumo.Lumo;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 
 import java.io.ByteArrayInputStream;
@@ -59,9 +64,18 @@ public class MainLayout extends AppLayout {
         appName.addClassNames(LumoUtility.FontSize.LARGE, LumoUtility.Margin.NONE);
         Header header = new Header(appName);
 
+        Button toggleButton = new Button("Dark Theme", click -> {
+            ThemeList themeList = UI.getCurrent().getElement().getThemeList();
+            if(themeList.contains(Lumo.DARK)) {
+                themeList.remove(Lumo.DARK);
+            } else {
+                themeList.add(Lumo.DARK);
+            }
+        });
+
         Scroller scroller = new Scroller(createNavigation());
 
-        addToDrawer(header, scroller, createFooter());
+        addToDrawer(header, scroller, createFooter(), toggleButton);
     }
 
     private AppNav createNavigation() {
@@ -79,6 +93,10 @@ public class MainLayout extends AppLayout {
         }
         if (accessChecker.hasAccess (EmployeesView.class)) {
             nav.addItem (new AppNavItem ("Employee", EmployeesView.class, "la la-user"));
+
+        }
+        if (accessChecker.hasAccess (ProductsView.class)) {
+            nav.addItem (new AppNavItem ("Product", ProductsView.class, "la la-columns"));
 
         }
         if (accessChecker.hasAccess(SpreadsheetView.class)) {
