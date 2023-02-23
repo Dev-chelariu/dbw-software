@@ -87,37 +87,28 @@ public class MainLayout extends AppLayout {
 
         if (accessChecker.hasAccess(DashboardView.class)) {
             nav.addItem(new AppNavItem("Dashboard", DashboardView.class, "la la-chart-area"));
-
         }
         if (accessChecker.hasAccess(UsersView.class)) {
             nav.addItem(new AppNavItem("Users", UsersView.class, "la la-user"));
-
         }
         if (accessChecker.hasAccess(EmailView.class)) {
-            nav.addItem(new AppNavItem("Email", EmailView.class, "la la-file"));
-
+            nav.addItem(new AppNavItem("Email", EmailView.class, "la la-mail-bulk"));
         }
         if (accessChecker.hasAccess (EmployeesView.class)) {
             nav.addItem (new AppNavItem ("Employee", EmployeesView.class, "la la-user"));
-
         }
         if (accessChecker.hasAccess (ProductsView.class)) {
             nav.addItem (new AppNavItem ("Product", ProductsView.class, "la la-columns"));
-
         }
         if (accessChecker.hasAccess(SpreadsheetView.class)) {
             nav.addItem(new AppNavItem("Spreadsheet", SpreadsheetView.class, "la la-file-excel"));
-
         }
         if (accessChecker.hasAccess(InvoiceView.class)) {
-            nav.addItem(new AppNavItem("Invoice", InvoiceView.class, "la la-file-excel"));
-
+            nav.addItem(new AppNavItem("Invoice", InvoiceView.class, "lab la-dochub"));
         }
         if (accessChecker.hasAccess(MapView.class)) {
             nav.addItem(new AppNavItem("Location", MapView.class, "la la-map"));
-
         }
-
         return nav;
     }
 
