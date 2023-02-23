@@ -2,12 +2,18 @@ package com.example.software.data.entity;
 
 import com.example.software.data.entity.enums.Role;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import lombok.*;
 
 import javax.persistence.*;
 import java.util.Set;
 
+@Getter
+@Setter
+@AllArgsConstructor
+@NoArgsConstructor
+@ToString
 @Entity
-@Table(name = "application_user")
+@Table(name = "user_app")
 public class User extends AbstractEntity {
 
     private String username;
@@ -21,35 +27,9 @@ public class User extends AbstractEntity {
     @Column(length = 1000000)
     private byte[] profilePicture;
 
-    public String getUsername() {
-        return username;
-    }
-    public void setUsername(String username) {
+    public User(String username, String name, String hashedPassword) {
         this.username = username;
-    }
-    public String getName() {
-        return name;
-    }
-    public void setName(String name) {
         this.name = name;
-    }
-    public String getHashedPassword() {
-        return hashedPassword;
-    }
-    public void setHashedPassword(String hashedPassword) {
         this.hashedPassword = hashedPassword;
     }
-    public Set<Role> getRoles() {
-        return roles;
-    }
-    public void setRoles(Set<Role> roles) {
-        this.roles = roles;
-    }
-    public byte[] getProfilePicture() {
-        return profilePicture;
-    }
-    public void setProfilePicture(byte[] profilePicture) {
-        this.profilePicture = profilePicture;
-    }
-
 }
