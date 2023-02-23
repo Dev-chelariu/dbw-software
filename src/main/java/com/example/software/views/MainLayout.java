@@ -4,21 +4,15 @@ import com.example.software.components.appnav.AppNav;
 import com.example.software.components.appnav.AppNavItem;
 import com.example.software.data.entity.User;
 import com.example.software.security.AuthenticatedUser;
-import com.example.software.views.about.AboutView;
 import com.example.software.views.dashboard.DashboardView;
+import com.example.software.views.email.EmailView;
 import com.example.software.views.map.MapView;
 import com.example.software.views.spreadsheet.SpreadsheetView;
-import com.vaadin.flow.component.accordion.Accordion;
 import com.vaadin.flow.component.applayout.AppLayout;
 import com.vaadin.flow.component.applayout.DrawerToggle;
 import com.vaadin.flow.component.avatar.Avatar;
 import com.vaadin.flow.component.contextmenu.MenuItem;
-import com.vaadin.flow.component.html.Anchor;
-import com.vaadin.flow.component.html.Div;
-import com.vaadin.flow.component.html.Footer;
-import com.vaadin.flow.component.html.H1;
-import com.vaadin.flow.component.html.H2;
-import com.vaadin.flow.component.html.Header;
+import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.menubar.MenuBar;
 import com.vaadin.flow.component.orderedlayout.Scroller;
@@ -26,6 +20,7 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.server.auth.AccessAnnotationChecker;
 import com.vaadin.flow.theme.lumo.LumoUtility;
+
 import java.io.ByteArrayInputStream;
 import java.util.Optional;
 
@@ -77,8 +72,8 @@ public class MainLayout extends AppLayout {
             nav.addItem(new AppNavItem("Dashboard", DashboardView.class, "la la-chart-area"));
 
         }
-        if (accessChecker.hasAccess(AboutView.class)) {
-            nav.addItem(new AppNavItem("About", AboutView.class, "la la-file"));
+        if (accessChecker.hasAccess(EmailView.class)) {
+            nav.addItem(new AppNavItem("Email", EmailView.class, "la la-file"));
 
         }
         if (accessChecker.hasAccess(SpreadsheetView.class)) {
