@@ -6,6 +6,7 @@ import com.example.software.data.entity.User;
 import com.example.software.security.AuthenticatedUser;
 import com.example.software.views.dashboard.DashboardView;
 import com.example.software.views.email.EmailView;
+import com.example.software.views.employee.EmployeesView;
 import com.example.software.views.map.MapView;
 import com.example.software.views.spreadsheet.SpreadsheetView;
 import com.vaadin.flow.component.applayout.AppLayout;
@@ -74,6 +75,10 @@ public class MainLayout extends AppLayout {
         }
         if (accessChecker.hasAccess(EmailView.class)) {
             nav.addItem(new AppNavItem("Email", EmailView.class, "la la-file"));
+
+        }
+        if (accessChecker.hasAccess (EmployeesView.class)) {
+            nav.addItem (new AppNavItem ("Employee", EmployeesView.class, "la la-user"));
 
         }
         if (accessChecker.hasAccess(SpreadsheetView.class)) {
