@@ -10,7 +10,7 @@ import javax.annotation.security.PermitAll;
 
 @PageTitle("Invoice")
 @Route(value = "invoice", layout = MainLayout.class)
-@RouteAlias(value = "invoice", layout = MainLayout.class)
+@RouteAlias(value = "", layout = MainLayout.class)
 @PermitAll
 public class InvoiceView extends VerticalLayout {
 

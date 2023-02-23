@@ -114,7 +114,7 @@ public class MainLayout extends AppLayout {
 
         }
         if (accessChecker.hasAccess(MapView.class)) {
-            nav.addItem(new AppNavItem("Map", MapView.class, "la la-map"));
+            nav.addItem(new AppNavItem("Location", MapView.class, "la la-map"));
 
         }
 
