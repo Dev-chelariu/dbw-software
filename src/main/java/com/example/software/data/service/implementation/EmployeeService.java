@@ -1,39 +1,59 @@
 package com.example.software.data.service.implementation;
 
-import com.example.software.data.entity.dto.CustomerDTO;
+import com.example.software.data.entity.dto.EmployeeDTO;
 import com.example.software.data.entity.mappers.EmployeeMapper;
 import com.example.software.data.repository.EmployeeRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
+import com.example.software.data.service.IPerson;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.stream.Collectors;
 
-@Component
-public class EmployeeService extends AbstractEmployee{
+@Service
+@Slf4j
+@RequiredArgsConstructor
+public class EmployeeService implements IPerson<EmployeeDTO, Long> {
 
-    @Autowired
-    public EmployeeService(EmployeeRepository employeeRepository, EmployeeMapper employeeMapper) {
-        super(employeeRepository, employeeMapper);
+    private final EmployeeRepository employeeRepository;
+    private final EmployeeMapper employeeMapper;
+
+    public EmployeeDTO findById(Long id) throws NoSuchElementException {
+        return employeeRepository
+                .findById(id)
+                .map (employeeMapper::toDto)
+                .orElseThrow (NoSuchElementException::new);
     }
 
+    public void save(EmployeeDTO employeeDTO) {
 
-    @Override
-    public CustomerDTO getCustomerById(Long id) {
-        return null;
+        if (employeeDTO == null) {
+           log.error ("Employee is null. Are you sure you have connected your form to the application?");
+            return;
+        }
+         employeeRepository.save(employeeMapper.toEmployee (employeeDTO));
+    }
+
+    public void delete(EmployeeDTO employeeDTO) {
+        employeeRepository.delete(employeeMapper.toEmployee (employeeDTO));
+
     }
 
     @Override
-    public void addCustomer(CustomerDTO customerDTO) {
-
+    public int count() {
+        return (int) employeeRepository.count();
     }
 
     @Override
-    public void deleteCustomer(CustomerDTO customerDTO) {
-
-    }
-
-    @Override
-    public List<CustomerDTO> findAll() {
-        return null;
+    public List<EmployeeDTO> findAll(String stringFilter) {
+        if (stringFilter == null || stringFilter.isEmpty()) {
+            return employeeRepository.findAll().stream ().map (employeeMapper::toDto)
+                    .collect(Collectors.toList());
+        } else {
+            return employeeRepository.search(stringFilter).stream ().map (employeeMapper::toDto)
+                    .collect(Collectors.toList());
+        }
     }
 }

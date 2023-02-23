@@ -16,14 +16,14 @@ import java.util.stream.Collectors;
 @Service
 @Slf4j
 @RequiredArgsConstructor
-public class CustomerService implements IPerson {
+public class CustomerService implements IPerson<CustomerDTO, Long> {
 
     private final CustomerRepository customerRepository;
 
     private final CustomerMapper customerMapper;
 
     @Override
-    public CustomerDTO getCustomerById(Long id) throws NoSuchElementException {
+    public CustomerDTO findById(Long id) throws NoSuchElementException {
         return customerRepository
                 .findById (id)
                 .map (customerMapper::toDto)
@@ -31,7 +31,7 @@ public class CustomerService implements IPerson {
     }
 
     @Override
-    public void addCustomer(CustomerDTO customerDTO) {
+    public void save(CustomerDTO customerDTO) {
 
         if (customerDTO == null) {
             log.error ("Customer is null. Are you sure you have connected your form to the application?");
@@ -41,23 +41,8 @@ public class CustomerService implements IPerson {
     }
 
     @Override
-    public void deleteCustomer(CustomerDTO customerDTO) {
+    public void delete(CustomerDTO customerDTO) {
         customerRepository.delete (customerMapper.toCustomer (customerDTO));
-    }
-
-    @Override
-    public EmployeeDTO getEmployeeById(Long id) {
-        return null;
-    }
-
-    @Override
-    public void addEmployee(EmployeeDTO employeeDTO) {
-
-    }
-
-    @Override
-    public void deleteEmployee(EmployeeDTO employeeDTO) {
-
     }
 
     @Override
@@ -66,12 +51,7 @@ public class CustomerService implements IPerson {
     }
 
     @Override
-    public List<EmployeeDTO> findAll(String stringFilter) {
-        return null;
-    }
-
-    @Override
-    public List<CustomerDTO> findAll() {
+    public List<CustomerDTO> findAll(String stringFilter) {
         return customerRepository.findAll ()
                                  .stream ()
                                  .map (customerMapper::toDto)

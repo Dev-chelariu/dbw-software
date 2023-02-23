@@ -1,27 +1,27 @@
 package com.example.software.data.service;
 
-import com.example.software.data.entity.dto.CustomerDTO;
-import com.example.software.data.entity.dto.EmployeeDTO;
+import com.sun.mail.imap.protocol.ID;
+import org.apache.poi.ss.formula.functions.T;
 
 import java.util.List;
 
-public interface IPerson {
+/**
+ *  Generics interface
+ * @param <T> Object you want to use
+ * @param <ID> id from that object
+ */
+public interface IPerson<T, ID> {
 
-    EmployeeDTO getEmployeeById(Long id);
+    List<T> findAll(String stringFilter);
 
-    void addEmployee(EmployeeDTO employeeDTO);
+    T findById(ID id);
 
-    void deleteEmployee(EmployeeDTO employeeDTO);
+    void save(T object);
+
+    void delete(T object);
 
     int count();
-
-    List<EmployeeDTO> findAll(String stringFilter);
-
-    CustomerDTO getCustomerById(Long id);
-
-    void addCustomer(CustomerDTO customerDTO);
-
-    void deleteCustomer(CustomerDTO customerDTO);
-
-    List<CustomerDTO> findAll();
 }
+
+
+

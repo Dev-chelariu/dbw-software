@@ -69,13 +69,13 @@ public class EmployeesView extends VerticalLayout {
     }
 
     private void deleteEmployee(EmployeeForm.DeleteEvent event) {
-        employeeService.deleteEmployee (event.getEmployee ());
+        employeeService.delete (event.getEmployee ());
         updateList ();
         closeEditor ();
     }
 
     private void saveEmployee(EmployeeForm.SaveEvent event) {
-        employeeService.addEmployee (event.getEmployee ());
+        employeeService.save (event.getEmployee ());
         updateList ();
         closeEditor ();
     }
