@@ -9,6 +9,8 @@ import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 
 @Getter
 @Setter
@@ -44,6 +46,9 @@ public class Product implements Serializable {
 
     @NotNull
     private Availability availability = Availability.COMING;
+
+    @ManyToMany(mappedBy = "products")
+    private List<Invoice> invoices = new ArrayList<>();
 
     public Product(String name, Integer price, String category) {
         this.name = name;
