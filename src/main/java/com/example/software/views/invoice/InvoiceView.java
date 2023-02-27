@@ -1,11 +1,14 @@
 package com.example.software.views.invoice;
 
+import com.example.software.data.entity.Customer;
 import com.example.software.data.entity.Invoice;
 import com.example.software.data.entity.enums.Availability;
 import com.example.software.data.entity.enums.Currency;
 import com.example.software.views.MainLayout;
 import com.vaadin.flow.component.board.Board;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.dependency.JsModule;
 import com.vaadin.flow.component.formlayout.FormLayout;
@@ -23,6 +26,7 @@ import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.provider.ListDataProvider;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.data.renderer.TemplateRenderer;
@@ -37,12 +41,12 @@ import org.apache.pdfbox.pdmodel.PDPageContentStream;
 import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.apache.pdfbox.pdmodel.font.PDFont;
 import org.apache.pdfbox.pdmodel.font.PDType1Font;
-import java.io.IOException;
+
 import javax.annotation.security.PermitAll;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
-import java.time.LocalDate;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Random;
@@ -58,10 +62,21 @@ import static com.example.software.data.entity.enums.Currency.getRandomCurrency;
 @PermitAll
 public class InvoiceView extends Div {
     private Anchor anchor;
+    static Invoice invoice;
+
+    Customer customer = new Customer();
+
+
+    TextField cFirstName, cLastName, cPhone;
+    EmailField emailCustomer;
+    TextArea textArea;
+
+    Span status;
+    // bind form fields to backing bean
+    Binder<Customer> binder = new Binder<>(Customer.class);
 
     public InvoiceView() {
         setId("container");
-
         // Controls part
         Div controlsLine = new Div();
         controlsLine.addClassName("controls-line");
@@ -71,8 +86,7 @@ public class InvoiceView extends Div {
         detailsWrapper.getThemeList().add("padding");
         detailsWrapper.getThemeList().remove("spacing");
         detailsWrapper.setClassName("invoice-details");
-
-        Span invoiceNameHeader = new Span("New Invoice #1");
+        Span invoiceNameHeader = new Span("New Invoice #");
         detailsWrapper.add(invoiceNameHeader);
 
         // Buttons
@@ -80,21 +94,66 @@ public class InvoiceView extends Div {
         buttonsWrapper.getThemeList().remove("spacing");
         buttonsWrapper.addClassName("controls-line-buttons");
 
-        Button discardBtn = new Button("Discard changes",
-                e -> Notification.show("Changes were discarded!"));
-        discardBtn.setThemeName("error tertiary");
 
-        Button saveDraftBtn = new Button("Save draft",
-                e -> Notification.show("Changes were saved!"));
-        saveDraftBtn.setThemeName("tertiary");
+        ConfirmDialog dialog = new ConfirmDialog();
+        //SAVE button
+        status = new Span();
+        status.setVisible(false);
+        dialog.setHeader("Unsaved changes");
+        dialog.setText(
+                "Do you want to save your changes?");
 
-        Button sendBtn = new Button("Send",
-                e -> Notification.show("Invoice was sent!"));
-        sendBtn.setThemeName("primary");
+        dialog.setCancelable(true);
+        dialog.addCancelListener(event -> setStatus("Canceled"));
+
+        dialog.setConfirmText("Save");
+        dialog.addConfirmListener(event -> setStatus("Saved"));
+
+        Button saveBtn = new Button("Save invoice");
+        saveBtn.setThemeName("primary");
+        saveBtn.addClickListener(event -> {
+            dialog.open();
+            status.setVisible(false);
+        });
+
+        //here
+        status = new Span();
+        status.setVisible(false);
+
+        ConfirmDialog dialog1 = new ConfirmDialog();
+        dialog1.setHeader("Changes deleted!");
+        dialog1.setText(
+                "Your changes has been deleted.");
+
+       Button discardBtn = new Button("Discard changes");
+         discardBtn.setThemeName("error tertiary");
+         discardBtn.addClickListener(event -> {
+
+            dialog1.open();
+            status.setVisible(false);
+
+            binder.setBean(customer);
+            binder.bind(cFirstName, Customer::getFirstName,Customer::setFirstName);
+            binder.bind(cLastName, Customer::getLastName, Customer::setLastName);
+            binder.bind(emailCustomer, Customer::getEmail,Customer::setEmail);
+            binder.bind(cPhone,Customer::getPhone,Customer::setPhone);
+            binder.bind(textArea,Customer::getDetails, Customer::setDetails);
+
+            customer.setFirstName("");
+            customer.setLastName("");
+            customer.setEmail("");
+            customer.setPhone("");
+            customer.setDetails("");
+        });
+
+        dialog1.setConfirmText("Ok");
+        dialog1.addConfirmListener(event -> setStatus("Empty!"));
 
         Button exportPdfButton = new Button("Export as PDF");
+        exportPdfButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY,
+                ButtonVariant.LUMO_SUCCESS);
 
-        buttonsWrapper.add(discardBtn, saveDraftBtn, sendBtn, exportPdfButton);
+        buttonsWrapper.add(discardBtn, saveBtn, status);
 
         controlsLine.add(detailsWrapper, buttonsWrapper);
 
@@ -116,39 +175,36 @@ public class InvoiceView extends Div {
         employee.setLabel("Employee");
 
         DatePicker date = new DatePicker();
-        date.setValue(LocalDate.of(2018, 12, 12));
         date.setLabel("Date");
 
         // Inputs
-        TextField cFirstName = new TextField();
+         cFirstName = new TextField();
         cFirstName.getElement().setAttribute("colspan", "2");
-        cFirstName.setLabel("Customer: First Name");
+        cFirstName.setLabel("First Name");
         cFirstName.setClassName("large");
-        cFirstName.setValue(" Italy");
         // Inputs
-        TextField cLastName = new TextField();
+         cLastName = new TextField();
         cLastName.getElement().setAttribute("colspan", "2");
-        cLastName.setLabel("Customer: Last Name");
+        cLastName.setLabel("Last Name");
         cLastName.setClassName("large");
-        cLastName.setValue(" Italy");
 
         // Inputs
-        EmailField emailCustomer = new EmailField();
+        emailCustomer = new EmailField();
         emailCustomer.getElement().setAttribute("colspan", "2");
-        emailCustomer.setLabel("Customer email");
+        emailCustomer.setLabel("Email");
         emailCustomer.setClassName("large");
 
         // Inputs
-        TextField cPhone = new TextField();
+        cPhone = new TextField();
         cPhone.getElement().setAttribute("colspan", "2");
         cPhone.setPattern(
                 "^[+]?[(]?[0-9]{3}[)]?[-s.]?[0-9]{3}[-s.]?[0-9]{4,6}$");
         cPhone.setHelperText("Format: +(123)456-7890");
-        cPhone.setLabel("Customer: Phone");
+        cPhone.setLabel("Phone");
         cPhone.setClassName("large");
 
         //Text Area
-        TextArea textArea = new TextArea();
+        textArea = new TextArea();
         int charLimit = 140;
         textArea.setLabel("Details invoice");
         textArea.setMaxLength(charLimit);
@@ -176,11 +232,11 @@ public class InvoiceView extends Div {
         Div btnWrapper = new Div();
         btnWrapper.setClassName("flex-1");
 
-        Span cardTransactionText = new Span("Add products to transaction");
+        Span cardTransactionText = new Span("Add products to invoice");
         Button addCardTransactionBtn = new Button(cardTransactionText);
         addCardTransactionBtn.setThemeName("tertiary");
         addCardTransactionBtn.setId("add-transaction");
-        btnWrapper.add(addCardTransactionBtn);
+        btnWrapper.add(addCardTransactionBtn, exportPdfButton);
 
         addsLine.add(btnWrapper);
 
@@ -330,7 +386,7 @@ public class InvoiceView extends Div {
                 // Add content to the PDF document
                 contentStream.beginText();
                 contentStream.newLineAtOffset(50, 720);
-                contentStream.showText("Nr. crt");
+                contentStream.showText("Nr. crt: " + invoice.getNrCrt());
                 contentStream.endText();
 
                 contentStream.beginText();
@@ -559,6 +615,11 @@ public class InvoiceView extends Div {
         return button;
     }
 
+    private void setStatus(String value) {
+        status.setText("Status: " + value);
+        status.setVisible(true);
+    }
+
     private static void displayNotification(String propertyName, Invoice item,
                                             String newValue) {
         Notification.show(propertyName + " was updated to be: " + newValue
@@ -578,7 +639,9 @@ public class InvoiceView extends Div {
     }
 
     private static Invoice createInvoice(int index, Random random) {
-        Invoice invoice = new Invoice();
+
+        invoice = new Invoice();
+        invoice.setNrCrt(random.nextInt(100000) / 100);
         invoice.setProduct("PVR2019");
         invoice.setDescription("Say Dock");
         invoice.setPrice(random.nextInt(100000) / 100f);

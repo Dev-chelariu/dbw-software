@@ -15,13 +15,13 @@ import java.io.Serializable;
 @Entity
 public class Invoice extends AbstractEntity implements Serializable {
 
+    private Integer nrCrt;
+
     private String name;
 
     private String customer;
 
     //private Customer customer;
-
-
 
     private String product;
     private String description;
