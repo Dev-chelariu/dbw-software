@@ -1,4 +1,4 @@
-FROM eclipse-temurin:17-jre-alpine
-COPY target/*.jar app.jar
+FROM openjdk:11
+ADD target/dbwsoftware-1.0-SNAPSHOT.jar dbwsoftware.jar
 EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "/app.jar"]
+ENTRYPOINT ["java", "-jar", "dbwsoftware.jar"]

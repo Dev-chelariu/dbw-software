@@ -41,4 +41,8 @@ public class UserService {
     public List<User> findAll() {
         return repository.findAll ();
     }
+
+    public int count() {
+        return (int) repository.count();
+    }
 }

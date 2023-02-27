@@ -1,10 +1,12 @@
 package com.example.software.views.dashboard;
 
 
+import com.example.software.data.service.implementation.UserService;
 import com.example.software.views.MainLayout;
 import com.example.software.views.dashboard.ServiceHealth.Status;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.board.Board;
+import com.vaadin.flow.component.board.Row;
 import com.vaadin.flow.component.charts.Chart;
 import com.vaadin.flow.component.charts.model.*;
 import com.vaadin.flow.component.grid.ColumnTextAlign;
@@ -33,12 +35,22 @@ import javax.annotation.security.RolesAllowed;
 @RolesAllowed("ADMIN")
 public class DashboardView extends Main {
 
-    public DashboardView() {
+    private final UserService userService;
+
+    public DashboardView(UserService userService) {
+        this.userService = userService;
+
         addClassName("dashboard-view");
 
+         String value = String.valueOf(userService.count());
+
         Board board = new Board();
-        board.addRow(createHighlight("Current users", "745", 33.7), createHighlight("View events", "54.6k", -112.45),
-                createHighlight("Conversion rate", "18%", 3.9), createHighlight("Custom metric", "-123.45", 0.0));
+        board.addRow(
+               // createUserRow(),
+                createHighlight("Current users", value.toString(), 12.2),
+                createHighlight("View events", "54.6k", -112.45),
+                createHighlight("Conversion rate", "18%", 3.9),
+                createHighlight("Custom metric", "-123.45", 0.0));
         board.addRow(createViewEvents());
         board.addRow(createServiceHealth(), createResponseTimes());
         add(board);
@@ -77,6 +89,7 @@ public class DashboardView extends Main {
         layout.setSpacing(false);
         return layout;
     }
+
 
     private Component createViewEvents() {
         // Header
