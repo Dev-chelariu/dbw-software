@@ -318,13 +318,19 @@ public class InvoiceView extends Div {
                 PDPageContentStream contentStream = new PDPageContentStream(document, page);
 
                 // Set the font
-                PDFont font = PDType1Font.HELVETICA_BOLD;
+                PDFont font = PDType1Font.HELVETICA;
                 contentStream.setFont(font, 12);
 
                 // Add content to the PDF document
                 contentStream.beginText();
-                contentStream.newLineAtOffset(250, 750);
-                contentStream.showText("Invoice Name: " + invoiceName.getValue());
+                contentStream.newLineAtOffset(275, 750);
+                contentStream.showText(invoiceName.getValue());
+                contentStream.endText();
+
+                // Add content to the PDF document
+                contentStream.beginText();
+                contentStream.newLineAtOffset(50, 720);
+                contentStream.showText("Nr. crt");
                 contentStream.endText();
 
                 contentStream.beginText();
@@ -334,35 +340,40 @@ public class InvoiceView extends Div {
 
                 contentStream.beginText();
                 contentStream.newLineAtOffset(50, 675);
-                contentStream.showText("Customer: First Name: " + cFirstName.getValue()+ " , " + " Last Name " + cLastName.getValue());
+                contentStream.showText("First Name: " + cFirstName.getValue());
+                contentStream.endText();
+
+                contentStream.beginText();
+                contentStream.newLineAtOffset(50, 650);
+                contentStream.showText("Last Name: " + cLastName.getValue());
                 contentStream.endText();
 
                 // Write the customer email
                 contentStream.beginText();
-                contentStream.newLineAtOffset(50, 650);
-                contentStream.showText("Customer Email: " + emailCustomer.getValue());
+                contentStream.newLineAtOffset(50, 625);
+                contentStream.showText("Email: " + emailCustomer.getValue());
                 contentStream.endText();
 
                 // Write the customer phone
                 contentStream.beginText();
-                contentStream.newLineAtOffset(50, 625);
-                contentStream.showText("Customer Phone: " + cPhone.getValue());
+                contentStream.newLineAtOffset(50, 600);
+                contentStream.showText("Phone: " + cPhone.getValue());
                 contentStream.endText();
 
                 // Write the invoice details
                 contentStream.beginText();
-                contentStream.newLineAtOffset(50, 600);
-                contentStream.showText("Invoice Details: " + textArea.getValue());
+                contentStream.newLineAtOffset(50, 575);
+                contentStream.showText("Details: " + textArea.getValue());
                 contentStream.endText();
 
                 // Write the employee responsible
                 contentStream.beginText();
-                contentStream.newLineAtOffset(50, 575);
+                contentStream.newLineAtOffset(50, 550);
                 contentStream.showText("Employee: " + employee.getValue());
                 contentStream.endText();
 
                 // set table parameters  //table
-                float margin = 60;
+                float margin = 65;
                 float yStartNewPage = page.getMediaBox().getHeight() - (5 * margin);
                 float tableWidth = page.getMediaBox().getWidth() - (1 * margin);
                 float rowHeight = 20f;
