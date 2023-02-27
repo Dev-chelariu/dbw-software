@@ -34,12 +34,13 @@ import com.vaadin.flow.server.StreamResource;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
+import org.apache.pdfbox.pdmodel.common.PDRectangle;
+import org.apache.pdfbox.pdmodel.font.PDFont;
 import org.apache.pdfbox.pdmodel.font.PDType1Font;
-
+import java.io.IOException;
 import javax.annotation.security.PermitAll;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.time.LocalDate;
 import java.util.Comparator;
@@ -65,15 +66,13 @@ public class InvoiceView extends Div {
         Div controlsLine = new Div();
         controlsLine.addClassName("controls-line");
 
-
         // Content
         HorizontalLayout detailsWrapper = new HorizontalLayout();
         detailsWrapper.getThemeList().add("padding");
         detailsWrapper.getThemeList().remove("spacing");
         detailsWrapper.setClassName("invoice-details");
 
-        Span invoiceNameHeader = new Span("Invoice #3225");
-
+        Span invoiceNameHeader = new Span("New Invoice #1");
         detailsWrapper.add(invoiceNameHeader);
 
         // Buttons
@@ -95,53 +94,6 @@ public class InvoiceView extends Div {
 
         Button exportPdfButton = new Button("Export as PDF");
 
-        exportPdfButton.addClickListener(eventPdf -> {
-            try {
-                // Generate the invoice PDF using PDFBox
-                PDDocument document = new PDDocument();
-                PDPage page = new PDPage();
-                document.addPage(page);
-                PDPageContentStream contentStream = new PDPageContentStream(document, page);
-
-                // Add content to the PDF document
-                contentStream.beginText();
-                contentStream.setFont(PDType1Font.HELVETICA, 12);
-                contentStream.newLineAtOffset(100, 700);
-                contentStream.showText("Invoice");
-
-                contentStream.endText();
-
-                contentStream.beginText();
-                contentStream.setFont(PDType1Font.HELVETICA, 12);
-                contentStream.newLineAtOffset(100, 650);
-                //   contentStream.showText("Customer Name: " + customerNameField.getValue());
-                contentStream.endText();
-
-                contentStream.beginText();
-                contentStream.setFont(PDType1Font.HELVETICA, 12);
-                contentStream.newLineAtOffset(100, 600);
-                //  contentStream.showText("Amount: " + totalAmountField.getValue());
-                contentStream.endText();
-
-                contentStream.close();
-                ByteArrayOutputStream out = new ByteArrayOutputStream();
-                document.save(out);
-                document.close();
-                InputStream in = new ByteArrayInputStream(out.toByteArray());
-
-                // Download the generated PDF file
-                StreamResource resource = new StreamResource("invoice.pdf", () -> in);
-                anchor = new Anchor(resource, "Download");
-                anchor.getElement().setAttribute("download", true);
-                Notification.show("Check in the footer of the page and press download!"
-                        , 3000, Notification.Position.MIDDLE);
-                add(anchor);
-
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        });
-
         buttonsWrapper.add(discardBtn, saveDraftBtn, sendBtn, exportPdfButton);
 
         controlsLine.add(detailsWrapper, buttonsWrapper);
@@ -158,7 +110,6 @@ public class InvoiceView extends Div {
         invoiceName.getElement().setAttribute("colspan", "2");
         invoiceName.setLabel("Invoice Name");
         invoiceName.setClassName("large");
-        invoiceName.setValue("Trip to Italy");
 
         Select<String> employee = new Select<>("Manolo", "Joonas", "Matti");
         employee.setValue("Manolo");
@@ -215,7 +166,6 @@ public class InvoiceView extends Div {
         inputsFormLayout.setId("inputs");
 
         inputsFormLayout.add(invoiceName, employee, date, cFirstName, cLastName, emailCustomer, cPhone, textArea);
-
         board.addRow(inputsFormWrapper);
 
         // Adds line
@@ -234,7 +184,7 @@ public class InvoiceView extends Div {
 
         addsLine.add(btnWrapper);
 
-//        // Grid Pro
+        // Grid Pro
         GridPro<Invoice> grid = new GridPro<>();
         List<Invoice> invoiceList = createItems();
         grid.setItems(invoiceList);
@@ -354,10 +304,235 @@ public class InvoiceView extends Div {
         priceText.setClassName("total");
         priceText.setText("812");
 
-
         detailsLine.add(totalText, totalSelect, priceText);
         detailsLine.setClassName("controls-line footer");
 
+        exportPdfButton.addClickListener(eventPdf -> {
+            try {
+                // Generate the invoice PDF using PDFBox
+                PDDocument document = new PDDocument();
+                PDPage page = new PDPage(PDRectangle.A4);
+                document.addPage(page);
+
+                // Set up a content stream for the page
+                PDPageContentStream contentStream = new PDPageContentStream(document, page);
+
+                // Set the font
+                PDFont font = PDType1Font.HELVETICA_BOLD;
+                contentStream.setFont(font, 12);
+
+                // Add content to the PDF document
+                contentStream.beginText();
+                contentStream.newLineAtOffset(250, 750);
+                contentStream.showText("Invoice Name: " + invoiceName.getValue());
+                contentStream.endText();
+
+                contentStream.beginText();
+                contentStream.newLineAtOffset(50, 700);
+                contentStream.showText("Date: " + date.getValue());
+                contentStream.endText();
+
+                contentStream.beginText();
+                contentStream.newLineAtOffset(50, 675);
+                contentStream.showText("Customer: First Name: " + cFirstName.getValue()+ " , " + " Last Name " + cLastName.getValue());
+                contentStream.endText();
+
+                // Write the customer email
+                contentStream.beginText();
+                contentStream.newLineAtOffset(50, 650);
+                contentStream.showText("Customer Email: " + emailCustomer.getValue());
+                contentStream.endText();
+
+                // Write the customer phone
+                contentStream.beginText();
+                contentStream.newLineAtOffset(50, 625);
+                contentStream.showText("Customer Phone: " + cPhone.getValue());
+                contentStream.endText();
+
+                // Write the invoice details
+                contentStream.beginText();
+                contentStream.newLineAtOffset(50, 600);
+                contentStream.showText("Invoice Details: " + textArea.getValue());
+                contentStream.endText();
+
+                // Write the employee responsible
+                contentStream.beginText();
+                contentStream.newLineAtOffset(50, 575);
+                contentStream.showText("Employee: " + employee.getValue());
+                contentStream.endText();
+
+                // set table parameters  //table
+                float margin = 60;
+                float yStartNewPage = page.getMediaBox().getHeight() - (5 * margin);
+                float tableWidth = page.getMediaBox().getWidth() - (1 * margin);
+                float rowHeight = 20f;
+                float tableTopY = yStartNewPage;
+                float tableBottomY = margin;
+                float[] columnWidths = {1.5f, 3f, 2f, 2f, 1.5f, 2f, 2f, 2f};
+
+                float currentY = tableTopY;
+                float currentX = margin;
+
+                for (int i = 0; i < columnWidths.length; i++) {
+                    String header = "";
+                    switch (i) {
+                        case 0:
+                            header = "Product";
+                            break;
+                        case 1:
+                            header = "Description";
+                            break;
+                        case 2:
+                            header = "Price";
+                            break;
+                        case 3:
+                            header = "Currency";
+                            break;
+                        case 4:
+                            header = "Amount";
+                            break;
+                        case 5:
+                            header = "Status";
+                            break;
+                        case 6:
+                            header = "Total";
+                            break;
+                        case 7:
+                            header = "";
+                            break;
+                    }
+                    contentStream.beginText();
+                    contentStream.newLineAtOffset(currentX, currentY);
+                    contentStream.showText(header);
+                    contentStream.endText();
+                    currentX += columnWidths[i] * (tableWidth / 14);
+                }
+
+                // draw table content
+                for (Invoice invoice : invoiceList) {
+                    currentY -= rowHeight;
+                    currentX = margin;
+                    contentStream.beginText();
+                    contentStream.newLineAtOffset(currentX, currentY);
+                    contentStream.showText(invoice.getProduct());
+                    contentStream.endText();
+                    currentX += columnWidths[0] * (tableWidth / 14);
+
+                    contentStream.beginText();
+                    contentStream.newLineAtOffset(currentX, currentY);
+                    contentStream.showText(invoice.getDescription());
+                    contentStream.endText();
+                    currentX += columnWidths[1] * (tableWidth / 14);
+
+                    contentStream.beginText();
+                    contentStream.newLineAtOffset(currentX, currentY);
+                    contentStream.showText(Float.toString(invoice.getPrice()));
+                    contentStream.endText();
+                    currentX += columnWidths[2] * (tableWidth / 14);
+
+                    contentStream.beginText();
+                    contentStream.newLineAtOffset(currentX, currentY);
+                    contentStream.showText(invoice.getCurrency().name());
+                    contentStream.endText();
+                    currentX += columnWidths[3] * (tableWidth / 14);
+
+                    contentStream.beginText();
+                    contentStream.newLineAtOffset(currentX, currentY);
+                    contentStream.showText(Integer.toString(invoice.getAmount()));
+                    contentStream.endText();
+                    currentX += columnWidths[4] * (tableWidth / 14);
+
+                    contentStream.beginText();
+                    contentStream.newLineAtOffset(currentX, currentY);
+                    contentStream.showText(invoice.getOrderCompleted() ? "Completed" : "Open");
+                    contentStream.endText();
+                    currentX += columnWidths[5] * (tableWidth / 14);
+
+                    contentStream.beginText();
+                    contentStream.newLineAtOffset(currentX, currentY);
+                    contentStream.showText(Float.toString(invoice.getTotal()));
+                    contentStream.endText();
+                    currentX += columnWidths[6] * (tableWidth / 14);
+
+                    // add a blank column at the end
+                    currentX += columnWidths[7] * (tableWidth / 14);
+                }
+                // draw table footer
+                currentY -= rowHeight;
+                currentX = margin;
+                contentStream.beginText();
+                contentStream.newLineAtOffset(currentX, currentY);
+                contentStream.showText("Total:");
+                contentStream.endText();
+
+                currentX += columnWidths[0] * (tableWidth / 14);
+
+                contentStream.beginText();
+                contentStream.newLineAtOffset(currentX, currentY);
+                contentStream.showText("");
+                contentStream.endText();
+
+                currentX += columnWidths[1] * (tableWidth / 14);
+
+                contentStream.beginText();
+                contentStream.newLineAtOffset(currentX, currentY);
+                contentStream.showText("");
+                contentStream.endText();
+
+                currentX += columnWidths[2] * (tableWidth / 14);
+
+                contentStream.beginText();
+                contentStream.newLineAtOffset(currentX, currentY);
+                contentStream.showText("");
+                contentStream.endText();
+
+                currentX += columnWidths[3] * (tableWidth / 14);
+
+                int totalAmount = 0;
+                float totalValue = 0.0f;
+
+                for (Invoice invoice : invoiceList) {
+                    totalAmount += invoice.getAmount();
+                    totalValue += invoice.getTotal();
+                }
+
+                contentStream.beginText();
+                contentStream.newLineAtOffset(currentX, currentY);
+                contentStream.showText(Integer.toString(totalAmount));
+                contentStream.endText();
+
+                currentX += columnWidths[4] * (tableWidth / 14);
+
+                contentStream.beginText();
+                contentStream.newLineAtOffset(currentX, currentY);
+                contentStream.showText("");
+                contentStream.endText();
+
+                currentX += columnWidths[5] * (tableWidth / 14);
+
+                contentStream.beginText();
+                contentStream.newLineAtOffset(currentX, currentY);
+                contentStream.showText(Float.toString(totalValue));
+                contentStream.endText();
+                contentStream.close();
+
+                ByteArrayOutputStream out = new ByteArrayOutputStream();
+                document.save(out);
+                document.close();
+                InputStream in = new ByteArrayInputStream(out.toByteArray());
+
+                // Download the generated PDF file
+                StreamResource resource = new StreamResource("invoice.pdf", () -> in);
+                anchor = new Anchor(resource, "Download");
+                anchor.getElement().setAttribute("download", true);
+                Notification.show("Check in the footer of the page and press download!"
+                        , 3000, Notification.Position.MIDDLE);
+                add(anchor);
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
         add(controlsLine, board, addsLine,grid, detailsLine);
     }
 
