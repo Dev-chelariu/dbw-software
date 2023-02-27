@@ -1,12 +1,13 @@
 package com.example.software.views.dashboard;
 
 
+import com.example.software.data.service.implementation.InvoiceService;
+import com.example.software.data.service.implementation.ProductService;
 import com.example.software.data.service.implementation.UserService;
 import com.example.software.views.MainLayout;
 import com.example.software.views.dashboard.ServiceHealth.Status;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.board.Board;
-import com.vaadin.flow.component.board.Row;
 import com.vaadin.flow.component.charts.Chart;
 import com.vaadin.flow.component.charts.model.*;
 import com.vaadin.flow.component.grid.ColumnTextAlign;
@@ -36,21 +37,27 @@ import javax.annotation.security.RolesAllowed;
 public class DashboardView extends Main {
 
     private final UserService userService;
+    private final ProductService productService;
+    private final InvoiceService invoiceService;
 
-    public DashboardView(UserService userService) {
+    public DashboardView(UserService userService, ProductService productService, InvoiceService invoiceService) {
         this.userService = userService;
+        this.productService = productService;
+        this.invoiceService = invoiceService;
 
         addClassName("dashboard-view");
 
          String value = String.valueOf(userService.count());
+         String sProductsCount = String.valueOf(productService.count());
+         String sInvoiceCount = String.valueOf(invoiceService.count());
 
         Board board = new Board();
         board.addRow(
                // createUserRow(),
                 createHighlight("Current users", value.toString(), 12.2),
-                createHighlight("View events", "54.6k", -112.45),
-                createHighlight("Conversion rate", "18%", 3.9),
-                createHighlight("Custom metric", "-123.45", 0.0));
+                createHighlight("Products", sProductsCount, 112.45),
+                createHighlight("Invoices", sInvoiceCount, 33.9),
+                createHighlight("Total sale", "1234353.45", 1.0));
         board.addRow(createViewEvents());
         board.addRow(createServiceHealth(), createResponseTimes());
         add(board);
@@ -94,11 +101,11 @@ public class DashboardView extends Main {
     private Component createViewEvents() {
         // Header
         Select year = new Select();
-        year.setItems("2011", "2012", "2013", "2014", "2015", "2016", "2017", "2018", "2019", "2020", "2021");
-        year.setValue("2021");
+        year.setItems("2018", "2019", "2020", "2021","2022","2023");
+        year.setValue("2023");
         year.setWidth("100px");
 
-        HorizontalLayout header = createHeader("View events", "City/month");
+        HorizontalLayout header = createHeader("Sales Warehouse", "City/month");
         header.add(year);
 
         // Chart
@@ -117,10 +124,10 @@ public class DashboardView extends Main {
         plotOptions.setMarker(new Marker(false));
         conf.addPlotOptions(plotOptions);
 
-        conf.addSeries(new ListSeries("Berlin", 189, 191, 291, 396, 501, 403, 609, 712, 729, 942, 1044, 1247));
-        conf.addSeries(new ListSeries("London", 138, 246, 248, 348, 352, 353, 463, 573, 778, 779, 885, 887));
-        conf.addSeries(new ListSeries("New York", 65, 65, 166, 171, 293, 302, 308, 317, 427, 429, 535, 636));
-        conf.addSeries(new ListSeries("Tokyo", 0, 11, 17, 123, 130, 142, 248, 349, 452, 454, 458, 462));
+        conf.addSeries(new ListSeries("Iasi", 189, 191, 291, 396, 501, 403, 609, 712, 729, 942, 1044, 1247));
+        conf.addSeries(new ListSeries("Neamt", 138, 246, 248, 348, 352, 353, 463, 573, 778, 779, 885, 887));
+        conf.addSeries(new ListSeries("Suceava", 65, 65, 166, 171, 293, 302, 308, 317, 427, 429, 535, 636));
+        conf.addSeries(new ListSeries("Botosani", 0, 11, 17, 123, 130, 142, 248, 349, 452, 454, 458, 462));
 
         // Add it all together
         VerticalLayout viewEvents = new VerticalLayout(header, chart);
