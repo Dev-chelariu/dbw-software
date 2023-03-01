@@ -3,6 +3,7 @@ package com.example.software;
 import com.example.software.data.repository.UserRepository;
 import com.vaadin.flow.component.dependency.NpmPackage;
 import com.vaadin.flow.component.page.AppShellConfigurator;
+import com.vaadin.flow.server.PWA;
 import com.vaadin.flow.theme.Theme;
 import org.modelmapper.ModelMapper;
 import org.springframework.boot.SpringApplication;
@@ -22,6 +23,7 @@ import javax.sql.DataSource;
  */
 @SpringBootApplication
 @Theme(value = "dbwsoftware")
+@PWA(name = "DBW-Software",shortName = "DBW")
 @NpmPackage(value = "line-awesome", version = "1.3.0")
 @NpmPackage(value = "@vaadin-component-factory/vcf-nav", version = "1.0.6")
 public class Application implements AppShellConfigurator {
