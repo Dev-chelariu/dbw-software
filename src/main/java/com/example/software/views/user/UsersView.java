@@ -13,11 +13,12 @@ import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
-import com.vaadin.flow.data.binder.Binder;
+import com.vaadin.flow.component.upload.Upload;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouteAlias;
 import com.vaadin.flow.server.StreamResource;
+import lombok.extern.slf4j.Slf4j;
 import org.vaadin.crudui.crud.CrudOperation;
 import org.vaadin.crudui.crud.impl.GridCrud;
 import org.vaadin.crudui.form.impl.form.factory.DefaultCrudFormFactory;
@@ -34,51 +35,50 @@ import java.util.Set;
 @RouteAlias(value = "users", layout = MainLayout.class)
 @RolesAllowed("ADMIN")
 @Uses(Icon.class)
+@Slf4j
 public class UsersView extends VerticalLayout {
 
-    MultiSelectComboBox<Role> rolesComboBox;
+    MultiSelectComboBox<Role> roles = new MultiSelectComboBox<>();
 
     public UsersView(UserService userService) {
-        DefaultCrudFormFactory<User> formFactory = new DefaultCrudFormFactory<>(User.class) {
 
+        DefaultCrudFormFactory<User> formFactory = new DefaultCrudFormFactory<>(User.class) {
+            //ORDER: ADD FIRST ROLE AFTER OTHERS, BECAUSE OTHERWISE WILL DELETE, ALL
 
             @Override
             protected void configureForm(FormLayout formLayout, List<HasValueAndElement> fields) {
                 Component nameField = (Component) fields.get(0);
-                formLayout.setColspan(nameField, 3);
+                formLayout.setColspan(nameField, 4);
 
 //                // Add an upload component for the profile picture
-//                Upload upload = new Upload();
-//                upload.setAcceptedFileTypes("image/jpeg", "image/png", "image/gif");
-//                upload.setMaxFiles(1); // Allow only one file to be uploaded
-//                formLayout.addFormItem(upload, "Profile Picture");
+                Upload upload = new Upload();
+                upload.setAcceptedFileTypes("image/jpeg", "image/png", "image/gif");
+                upload.setMaxFiles(1); // Allow only one file to be uploaded
+                formLayout.addFormItem(upload, "");
 
-                // Add a ComboBox for selecting roles
-                rolesComboBox = new MultiSelectComboBox<>();
-                rolesComboBox.setItems(Role.values());
-                rolesComboBox.setItemLabelGenerator(Role::getName);
-                rolesComboBox.setLabel("Roles");
+                roles.setItems(Role.values());
+                roles.setItemLabelGenerator(Role::getName);
+                roles.setLabel("Roles");
 
                 // Add a listener to the component to retrieve selected values
-                rolesComboBox.addValueChangeListener(event -> {
-                    User newUser = new User();
-                    Binder<User> binder = new Binder<>();
-                    binder.setBean(newUser);
-                    binder.bindInstanceFields(this);
-
-                    Set<Role> selectedRoles = event.getValue();
-                    newUser.setRoles(selectedRoles);
-
-                    userService.register(newUser, selectedRoles);
+                roles.addValueChangeListener(event ->  {
+                    try {
+                        User newUser = new User();
+                        binder.setBean(newUser);
+                        binder.bindInstanceFields(this);
+                        Set<Role> roless = event.getValue();
+                        newUser.setRoles(roless);
+                    } catch (Throwable e) {
+                        log.error("We have troubles", e);
+                    }
                 });
-
-                formLayout.addFormItem(rolesComboBox," ");
+                formLayout.addFormItem(roles,"");
             }
         };
 
         formFactory.setUseBeanValidation(true);
-        formFactory.setVisibleProperties("username", "name", "hashedPassword, roles", "profilePicture");
-        formFactory.setVisibleProperties(CrudOperation.ADD, "username", "name", "hashedPassword","roles", "profilePicture");
+        formFactory.setVisibleProperties("roles","username", "name", "hashedPassword","profilePicture");
+        formFactory.setVisibleProperties(CrudOperation.ADD,"roles", "username", "name", "hashedPassword","profilePicture");
 
         // crud instance
         GridCrud<User> crud = new GridCrud<>(User.class, new HorizontalSplitCrudLayout(), formFactory);
@@ -118,16 +118,14 @@ public class UsersView extends VerticalLayout {
     }
 
     private Set<Role> getUserRolesFromForm() {
-        Set<Role> roles = new HashSet<>();
-
+        Set<Role> sRoles = new HashSet<>();
         // Get the selected roles from the MultiSelectComboBox component
-        Set<Role> selectedRoles = rolesComboBox.getValue();
+        Set<Role> selectedRoles = roles.getValue();
 
         // Add the selected roles to the roles Set object
         for (Role role : selectedRoles) {
-            roles.add(role);
+            sRoles.add(role);
         }
-
-        return roles;
+        return sRoles;
     }
 }

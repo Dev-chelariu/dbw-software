@@ -2,14 +2,16 @@ package com.example.software.data.entity;
 
 import com.example.software.data.entity.enums.Role;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import lombok.*;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 
 import javax.persistence.*;
 import java.util.Set;
 
 @Getter
 @Setter
-@AllArgsConstructor
 @NoArgsConstructor
 @ToString
 @Entity
@@ -35,7 +37,14 @@ public class User extends AbstractEntity {
         this.hashedPassword = hashedPassword;
         this.roles = roles;
     }
-
+//
+//    public User(String username, String name, String hashedPassword, Set<Role> roles, byte[] profilePicture) {
+//        this.username = username;
+//        this.name = name;
+//        this.hashedPassword = hashedPassword;
+//        this.roles = roles;
+//        this.profilePicture = profilePicture;
+//    }
     public Set<Role> getRoles() {
         return roles;
     }

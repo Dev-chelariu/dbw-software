@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -53,8 +54,11 @@ public class UserService {
         repository.deleteById(id);
     }
     public User register(User user, Set<Role> roles) {
+        user.getName();
+        user.getUsername();
         user.setRoles(roles);
         user.setHashedPassword(securityConfiguration.passwordEncoder ().encode (user.getHashedPassword ()));
+        user.setProfilePicture("some_url".getBytes(StandardCharsets.UTF_8));
         return repository.save(user);
     }
 
