@@ -1,7 +1,6 @@
 package com.example.software.data.service;
 
-import com.sun.mail.imap.protocol.ID;
-import org.apache.poi.ss.formula.functions.T;
+import com.example.software.data.entity.Employee;
 
 import java.util.List;
 
@@ -21,6 +20,8 @@ public interface IPerson<T, ID> {
     void delete(T object);
 
     int count();
+
+    List<Employee>find();
 }
 
 

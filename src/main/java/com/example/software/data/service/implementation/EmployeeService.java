@@ -1,5 +1,6 @@
 package com.example.software.data.service.implementation;
 
+import com.example.software.data.entity.Employee;
 import com.example.software.data.entity.dto.EmployeeDTO;
 import com.example.software.data.entity.mappers.EmployeeMapper;
 import com.example.software.data.repository.EmployeeRepository;
@@ -19,6 +20,8 @@ public class EmployeeService implements IPerson<EmployeeDTO, Long> {
 
     private final EmployeeRepository employeeRepository;
     private final EmployeeMapper employeeMapper;
+
+
 
     public EmployeeDTO findById(Long id) throws NoSuchElementException {
         return employeeRepository
@@ -55,5 +58,9 @@ public class EmployeeService implements IPerson<EmployeeDTO, Long> {
             return employeeRepository.search(stringFilter).stream ().map (employeeMapper::toDto)
                     .collect(Collectors.toList());
         }
+    }
+    @Override
+    public List<Employee>find(){
+        return employeeRepository.findAll();
     }
 }

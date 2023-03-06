@@ -12,6 +12,8 @@ public interface IProduct {
     //todo: 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 token github
     List<ProductDTO> findAllProducts();
 
+    List<Product> findAll();
+
     ProductDTO addProduct(ProductDTO productDto);
 
     ProductDTO getProductById(Long id);
@@ -23,4 +25,6 @@ public interface IProduct {
     Page<Product> list(Pageable pageable);
 
     List<ProductDTO> findByNameContainingIgnoreCase(String name);
+
+    Product findByName(String name);
 }

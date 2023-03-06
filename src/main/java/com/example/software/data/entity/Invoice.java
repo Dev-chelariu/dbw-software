@@ -1,71 +1,67 @@
 package com.example.software.data.entity;
 
 import com.example.software.data.entity.enums.Availability;
-import com.example.software.data.entity.enums.Currency;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.Formula;
 
-import javax.persistence.Entity;
+import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 import java.io.Serializable;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+
 @Getter
 @Setter
 @NoArgsConstructor
+@AllArgsConstructor
 @Entity
-public class Invoice extends AbstractEntity implements Serializable {
+public class Invoice  implements Serializable {
 
-    private Integer nrCrt;
+    @Id
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "idgenerator")
+    @SequenceGenerator(name = "idgenerator", initialValue = 1000)
+    @Column(name="invoice_id")
+    private Long invoiceId;
 
     private String name;
 
-    private String customer;
+    @ManyToOne
+    @JoinColumn(name = "customer_id")
+    @NotNull
+    @JsonIgnoreProperties({"customers"})
+    private Customer customer;
 
-    //private Customer customer;
+    @ManyToMany(fetch=FetchType.EAGER)
+    @JoinTable(name="invoice_details",
+            joinColumns=
+            @JoinColumn(name="invoice_id", referencedColumnName="invoice_id"),
+            inverseJoinColumns=
+            @JoinColumn(name="cod_product", referencedColumnName="cod_product"))
+    private List<Product> lstProduct = new ArrayList<>();
 
-    private String product;
-    private String description;
+    @Formula("(select count(c.id) from Customer c where c.invoice_id = id)")
+    private int customerCount;
 
-//    @ManyToMany(cascade = {
-//            CascadeType.PERSIST,
-//            CascadeType.MERGE
-//    })
-//    @JoinTable(name = "invoice_product",
-//            joinColumns = @JoinColumn(name = "invoice_id"),
-//            inverseJoinColumns = @JoinColumn(name = "product_id")
-//    )
-//    private List<Product> products = new ArrayList<>();
-
-    private float price;
-
-    private int amount;
-    private Currency currency;
+    private int quantity;
 
     private Boolean isOrderCompleted;
 
     private int total;
-    public Boolean getOrderCompleted() {
-        return isOrderCompleted;
-    }
-    public void setOrderCompleted(Boolean orderCompleted) {
-        isOrderCompleted = orderCompleted;
-    }
+
+    private LocalDate invoiceDate;
+
     @NotNull
     private Availability availability = Availability.COMING;
 
-    @Override
-    public String toString() {
-        return "Invoice{" +
-                "product='" + product + '\'' +
-                ", description='" + description + '\'' +
-                ", price=" + price +
-                ", amount=" + amount +
-                ", currency=" + currency +
-                ", isOrderCompleted=" + isOrderCompleted +
-                ", total=" + total +
-                ", availability=" + availability +
-                '}';
-    }
+
+//    public List<Product> getProducts() {
+//        return products;
+//    }
 
     @Override
     public Invoice clone() {
@@ -75,16 +71,5 @@ public class Invoice extends AbstractEntity implements Serializable {
             throw new RuntimeException(
                     "The Invoices object could not be cloned.", e);
         }
-    }
-
-    public Invoice(String product, String description, float price, int amount, Currency currency, Boolean isOrderCompleted, int total, Availability availability) {
-        this.product = product;
-        this.description = description;
-        this.price = price;
-        this.amount = amount;
-        this.currency = currency;
-        this.isOrderCompleted = isOrderCompleted;
-        this.total = total;
-        this.availability = availability;
     }
 }

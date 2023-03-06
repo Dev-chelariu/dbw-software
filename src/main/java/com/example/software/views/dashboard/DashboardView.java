@@ -172,7 +172,7 @@ public class DashboardView extends Main {
         serviceHealth.getElement().getThemeList().add("spacing-l");
         return serviceHealth;
     }
-
+//Charts
     private Component createResponseTimes() {
         HorizontalLayout header = createHeader("Response times", "Average across all systems");
 
@@ -183,13 +183,19 @@ public class DashboardView extends Main {
         chart.setThemeName("gradient");
 
         DataSeries series = new DataSeries();
+//        invoiceService.findAll().forEach(invoice ->
+//                series.add(new DataSeriesItem(invoice.getName(), invoice.getCustomerCount())));
+       // chart.getConfiguration().setSeries(series); OLD APPROACH
+        conf.addSeries(series);
+
+        //Basically I want to display clientii cu cele mai multe comenzi
         series.add(new DataSeriesItem("System 1", 12.5));
         series.add(new DataSeriesItem("System 2", 12.5));
         series.add(new DataSeriesItem("System 3", 12.5));
         series.add(new DataSeriesItem("System 4", 12.5));
         series.add(new DataSeriesItem("System 5", 12.5));
         series.add(new DataSeriesItem("System 6", 12.5));
-        conf.addSeries(series);
+
 
         // Add it all together
         VerticalLayout serviceHealth = new VerticalLayout(header, chart);

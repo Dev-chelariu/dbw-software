@@ -1,20 +1,23 @@
 package com.example.software.views.invoice;
 
 import com.example.software.data.entity.Customer;
-import com.example.software.data.entity.Invoice;
-import com.example.software.data.entity.enums.Availability;
-import com.example.software.data.entity.enums.Currency;
+import com.example.software.data.entity.Employee;
+import com.example.software.data.entity.Product;
+import com.example.software.data.service.implementation.EmployeeService;
+import com.example.software.data.service.implementation.ProductService;
 import com.example.software.views.MainLayout;
+import com.example.software.views.invoice.ExportUtils.PdfUtils;
 import com.vaadin.flow.component.board.Board;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.dependency.JsModule;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.grid.ColumnTextAlign;
+import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
-import com.vaadin.flow.component.gridpro.GridPro;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
@@ -28,32 +31,17 @@ import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.provider.ListDataProvider;
-import com.vaadin.flow.data.renderer.ComponentRenderer;
-import com.vaadin.flow.data.renderer.TemplateRenderer;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouteAlias;
 import com.vaadin.flow.server.StreamResource;
-import org.apache.pdfbox.pdmodel.PDDocument;
-import org.apache.pdfbox.pdmodel.PDPage;
-import org.apache.pdfbox.pdmodel.PDPageContentStream;
-import org.apache.pdfbox.pdmodel.common.PDRectangle;
-import org.apache.pdfbox.pdmodel.font.PDFont;
-import org.apache.pdfbox.pdmodel.font.PDType1Font;
 
 import javax.annotation.security.PermitAll;
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.util.Comparator;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-
-import static com.example.software.data.entity.enums.Currency.getRandomCurrency;
 
 @PageTitle("Invoice")
 @Route(value = "invoice", layout = MainLayout.class)
@@ -61,21 +49,24 @@ import static com.example.software.data.entity.enums.Currency.getRandomCurrency;
 @JsModule("./styles/shared-styles.js")
 @PermitAll
 public class InvoiceView extends Div {
-    private Anchor anchor;
-    static Invoice invoice;
 
+    private Grid<Product> selectedProductsGrid;
+
+    private final EmployeeService employeeService;
+
+    List<Product> invoiceList = new ArrayList<>();
     Customer customer = new Customer();
-
-
     TextField cFirstName, cLastName, cPhone;
     EmailField emailCustomer;
     TextArea textArea;
-
+    PdfUtils pdfUtils = new PdfUtils();
     Span status;
-    // bind form fields to backing bean
     Binder<Customer> binder = new Binder<>(Customer.class);
 
-    public InvoiceView() {
+    public InvoiceView(EmployeeService employeeService, ProductService productService) {
+        this.employeeService = employeeService;
+        this.selectedProductsGrid = createSelectedProductsGrid();
+
         setId("container");
         // Controls part
         Div controlsLine = new Div();
@@ -93,7 +84,6 @@ public class InvoiceView extends Div {
         HorizontalLayout buttonsWrapper = new HorizontalLayout();
         buttonsWrapper.getThemeList().remove("spacing");
         buttonsWrapper.addClassName("controls-line-buttons");
-
 
         ConfirmDialog dialog = new ConfirmDialog();
         //SAVE button
@@ -115,8 +105,6 @@ public class InvoiceView extends Div {
             dialog.open();
             status.setVisible(false);
         });
-
-        //here
         status = new Span();
         status.setVisible(false);
 
@@ -125,19 +113,19 @@ public class InvoiceView extends Div {
         dialog1.setText(
                 "Your changes has been deleted.");
 
-       Button discardBtn = new Button("Discard changes");
-         discardBtn.setThemeName("error tertiary");
-         discardBtn.addClickListener(event -> {
+        Button discardBtn = new Button("Discard changes");
+        discardBtn.setThemeName("error tertiary");
+        discardBtn.addClickListener(event -> {
 
             dialog1.open();
             status.setVisible(false);
 
             binder.setBean(customer);
-            binder.bind(cFirstName, Customer::getFirstName,Customer::setFirstName);
+            binder.bind(cFirstName, Customer::getFirstName, Customer::setFirstName);
             binder.bind(cLastName, Customer::getLastName, Customer::setLastName);
-            binder.bind(emailCustomer, Customer::getEmail,Customer::setEmail);
-            binder.bind(cPhone,Customer::getPhone,Customer::setPhone);
-            binder.bind(textArea,Customer::getDetails, Customer::setDetails);
+            binder.bind(emailCustomer, Customer::getEmail, Customer::setEmail);
+            binder.bind(cPhone, Customer::getPhone, Customer::setPhone);
+            binder.bind(textArea, Customer::getDetails, Customer::setDetails);
 
             customer.setFirstName("");
             customer.setLastName("");
@@ -154,7 +142,6 @@ public class InvoiceView extends Div {
                 ButtonVariant.LUMO_SUCCESS);
 
         buttonsWrapper.add(discardBtn, saveBtn, status);
-
         controlsLine.add(detailsWrapper, buttonsWrapper);
 
         // Input parts layout
@@ -170,20 +157,33 @@ public class InvoiceView extends Div {
         invoiceName.setLabel("Invoice Name");
         invoiceName.setClassName("large");
 
-        Select<String> employee = new Select<>("Manolo", "Joonas", "Matti");
-        employee.setValue("Manolo");
-        employee.setLabel("Employee");
+        ComboBox<Employee> employeeBring = new ComboBox<>("Employee");
+        // Get a list of Employee objects from your service
+        List<Employee> employees = employeeService.find();
 
+        // Create a ListDataProvider from the list of Employee objects
+        ListDataProvider<Employee> dataProvider = new ListDataProvider<>(employees);
+
+        // Set the dataProvider as the items in the ComboBox
+        employeeBring.setDataProvider(dataProvider);
+
+        // Set the label generator for the ComboBox
+        employeeBring.setItemLabelGenerator(Employee::getFirstName);
+
+        // Set the placeholder text for the ComboBox
+        employeeBring.setPlaceholder("Select an employee");
+
+        // Set the Date for the DatePicker
         DatePicker date = new DatePicker();
         date.setLabel("Date");
 
         // Inputs
-         cFirstName = new TextField();
+        cFirstName = new TextField();
         cFirstName.getElement().setAttribute("colspan", "2");
         cFirstName.setLabel("First Name");
         cFirstName.setClassName("large");
         // Inputs
-         cLastName = new TextField();
+        cLastName = new TextField();
         cLastName.getElement().setAttribute("colspan", "2");
         cLastName.setLabel("Last Name");
         cLastName.setClassName("large");
@@ -213,7 +213,6 @@ public class InvoiceView extends Div {
             e.getSource()
                     .setHelperText(e.getValue().length() + "/" + charLimit);
         });
-
         inputsFormLayout.setResponsiveSteps(
                 new FormLayout.ResponsiveStep("0", 2,
                         FormLayout.ResponsiveStep.LabelsPosition.TOP),
@@ -221,7 +220,7 @@ public class InvoiceView extends Div {
                 new FormLayout.ResponsiveStep("30em", 4));
         inputsFormLayout.setId("inputs");
 
-        inputsFormLayout.add(invoiceName, employee, date, cFirstName, cLastName, emailCustomer, cPhone, textArea);
+        inputsFormLayout.add(invoiceName, employeeBring, date, cFirstName, cLastName, emailCustomer, cPhone, textArea);
         board.addRow(inputsFormWrapper);
 
         // Adds line
@@ -233,117 +232,40 @@ public class InvoiceView extends Div {
         btnWrapper.setClassName("flex-1");
 
         Span cardTransactionText = new Span("Add products to invoice");
-        Button addCardTransactionBtn = new Button(cardTransactionText);
-        addCardTransactionBtn.setThemeName("tertiary");
-        addCardTransactionBtn.setId("add-transaction");
-        btnWrapper.add(addCardTransactionBtn, exportPdfButton);
-
+        Button addProductToInvoiceBtn = new Button(cardTransactionText);
+        addProductToInvoiceBtn.setThemeName("tertiary");
+        addProductToInvoiceBtn.setId("add-transaction");
+        btnWrapper.add(addProductToInvoiceBtn, exportPdfButton);
         addsLine.add(btnWrapper);
 
         // Grid Pro
-        GridPro<Invoice> grid = new GridPro<>();
-        List<Invoice> invoiceList = createItems();
-        grid.setItems(invoiceList);
+        selectedProductsGrid.setItems(invoiceList);
+        selectedProductsGrid.setHeight("600px");
 
-        addCardTransactionBtn.addClickListener(e -> {
-            invoiceList.add(0, new Invoice("","", 0, 0, Currency.EUR,false,0, Availability.COMING));
-            grid.getDataProvider().refreshAll();
+        // add the grids to the layout
+        add(selectedProductsGrid);
+
+        // create the add transaction button
+        addProductToInvoiceBtn.addClickListener(event -> {
+            List<Product> allProducts = productService.findAll();
+
+            AddTransactionDialog addTransactionDialog = new AddTransactionDialog(allProducts, selectedProducts -> {
+                selectedProductsGrid.setItems(selectedProducts);
+                selectedProductsGrid.getDataProvider().refreshAll();
+            });
+            addTransactionDialog.open();
         });
 
-        grid.addThemeVariants(GridVariant.LUMO_COLUMN_BORDERS,
+        selectedProductsGrid.addThemeVariants(GridVariant.LUMO_COLUMN_BORDERS,
                 GridVariant.LUMO_COMPACT);
-
-        grid.addEditColumn(Invoice::getProduct, "product")
-                .text((item, newValue) -> {
-                    item.setProduct(newValue);
-                    displayNotification("Product", item, newValue);
-                }).setHeader("Product");
-
-        grid.addEditColumn(Invoice::getDescription, "description")
-                .text((item, newValue) -> {
-                    item.setDescription(newValue);
-                    displayNotification("Description", item, newValue);
-                }).setHeader("Description").setWidth("250px");
-
-        grid.addEditColumn(Invoice::getPrice, "price")
-                .text((item, newValue) -> {
-                    try {
-                        item.setPrice(Float.valueOf(newValue));
-                        displayNotification("Price", item, newValue);
-                    } catch (Exception e) {
-                        displayNotification("Price", item);
-                    }
-                }).setHeader("Price").setTextAlign(ColumnTextAlign.END);
-
-        ComponentRenderer<Div, Invoice> currencyRenderer = new ComponentRenderer<>(
-                invoice -> {
-                    Div icon = new Div();
-                    icon.setText(invoice.getCurrency().name());
-                    icon.setClassName("icon-"
-                            + invoice.getCurrency().name().toLowerCase());
-                    return icon;
-                });
-
-        grid.addEditColumn(Invoice::getCurrency, currencyRenderer)
-                .select((item, newValue) -> {
-                    item.setCurrency(newValue);
-                    displayNotification("Currency", item,
-                            newValue.getStringRepresentation());
-                }, Currency.class)
-                .setComparator(Comparator.comparing(
-                        inv -> inv.getCurrency().getStringRepresentation()))
-                .setHeader("Currency").setWidth("150px");
-
-        grid.addEditColumn(Invoice::getAmount, "amount")
-                .text((item, newValue) -> {
-                    try {
-                        item.setAmount(Integer.valueOf(newValue));
-                        displayNotification("Amount", item, newValue);
-                    } catch (Exception e) {
-                        displayNotification("Amount", item);
-                    }
-                }).setHeader("Amount").setTextAlign(ColumnTextAlign.END);
-
-        ComponentRenderer<Span, Invoice> statusRenderer = new ComponentRenderer<>(
-                invoice -> {
-                    Span badge = new Span();
-                    badge.setText(
-                            invoice.getOrderCompleted() ? "Completed" : "Open");
-                    badge.getElement().setAttribute("theme",
-                            invoice.getOrderCompleted() ? "badge success"
-                                    : "badge");
-                    return badge;
-                });
-        grid.addEditColumn(Invoice::getOrderCompleted, statusRenderer)
-                .checkbox((item, newValue) -> {
-                    item.setOrderCompleted(newValue);
-                    displayNotification("Order completed ", item,
-                            newValue.toString());
-                })
-                .setComparator(
-                        Comparator.comparing(inv -> inv.getOrderCompleted()))
-                .setHeader("Status");
-        grid.addEditColumn(Invoice::getTotal,
-                        TemplateRenderer.<Invoice> of("[[item.symbol]][[item.total]]")
-                                .withProperty("symbol",
-                                        invoice -> invoice.getCurrency().getSymbol())
-                                .withProperty("total", Invoice::getTotal))
-                .text((item, newValue) -> {
-                    try {
-                        item.setTotal(Integer.parseInt(newValue));
-                        displayNotification("Total", item, newValue);
-                    } catch (Exception e) {
-                        displayNotification("Total", item);
-                    }
-                }).setComparator(Comparator.comparing(inv -> inv.getTotal()))
-                .setHeader("Total").setTextAlign(ColumnTextAlign.END);
-        grid.addComponentColumn(item -> createRemoveButton(grid, item))
+        selectedProductsGrid.addComponentColumn(item -> createRemoveButton(selectedProductsGrid, item))
                 .setWidth("70px").setFlexGrow(0)
                 .setTextAlign(ColumnTextAlign.CENTER);
 
-        grid.setMultiSort(true);
+        selectedProductsGrid.setMultiSort(true);
 
-        grid.getColumns().forEach(column -> column.setResizable(true));
+        selectedProductsGrid.getColumns().forEach(column -> column.setResizable(true));
+        selectedProductsGrid.setHeight("500px");
 
         // Details line
         Div detailsLine = new Div();
@@ -364,293 +286,61 @@ public class InvoiceView extends Div {
         detailsLine.setClassName("controls-line footer");
 
         exportPdfButton.addClickListener(eventPdf -> {
+            // Generate the PDF and store it in a byte array
+            byte[] pdfBytes;
             try {
-                // Generate the invoice PDF using PDFBox
-                PDDocument document = new PDDocument();
-                PDPage page = new PDPage(PDRectangle.A4);
-                document.addPage(page);
-
-                // Set up a content stream for the page
-                PDPageContentStream contentStream = new PDPageContentStream(document, page);
-
-                // Set the font
-                PDFont font = PDType1Font.HELVETICA;
-                contentStream.setFont(font, 12);
-
-                // Add content to the PDF document
-                contentStream.beginText();
-                contentStream.newLineAtOffset(275, 750);
-                contentStream.showText(invoiceName.getValue());
-                contentStream.endText();
-
-                // Add content to the PDF document
-                contentStream.beginText();
-                contentStream.newLineAtOffset(50, 720);
-                contentStream.showText("Nr. crt: " + invoice.getNrCrt());
-                contentStream.endText();
-
-                contentStream.beginText();
-                contentStream.newLineAtOffset(50, 700);
-                contentStream.showText("Date: " + date.getValue());
-                contentStream.endText();
-
-                contentStream.beginText();
-                contentStream.newLineAtOffset(50, 675);
-                contentStream.showText("First Name: " + cFirstName.getValue());
-                contentStream.endText();
-
-                contentStream.beginText();
-                contentStream.newLineAtOffset(50, 650);
-                contentStream.showText("Last Name: " + cLastName.getValue());
-                contentStream.endText();
-
-                // Write the customer email
-                contentStream.beginText();
-                contentStream.newLineAtOffset(50, 625);
-                contentStream.showText("Email: " + emailCustomer.getValue());
-                contentStream.endText();
-
-                // Write the customer phone
-                contentStream.beginText();
-                contentStream.newLineAtOffset(50, 600);
-                contentStream.showText("Phone: " + cPhone.getValue());
-                contentStream.endText();
-
-                // Write the invoice details
-                contentStream.beginText();
-                contentStream.newLineAtOffset(50, 575);
-                contentStream.showText("Details: " + textArea.getValue());
-                contentStream.endText();
-
-                // Write the employee responsible
-                contentStream.beginText();
-                contentStream.newLineAtOffset(50, 550);
-                contentStream.showText("Employee: " + employee.getValue());
-                contentStream.endText();
-
-                // set table parameters  //table
-                float margin = 65;
-                float yStartNewPage = page.getMediaBox().getHeight() - (5 * margin);
-                float tableWidth = page.getMediaBox().getWidth() - (1 * margin);
-                float rowHeight = 20f;
-                float tableTopY = yStartNewPage;
-                float tableBottomY = margin;
-                float[] columnWidths = {1.5f, 3f, 2f, 2f, 1.5f, 2f, 2f, 2f};
-
-                float currentY = tableTopY;
-                float currentX = margin;
-
-                for (int i = 0; i < columnWidths.length; i++) {
-                    String header = "";
-                    switch (i) {
-                        case 0:
-                            header = "Product";
-                            break;
-                        case 1:
-                            header = "Description";
-                            break;
-                        case 2:
-                            header = "Price";
-                            break;
-                        case 3:
-                            header = "Currency";
-                            break;
-                        case 4:
-                            header = "Amount";
-                            break;
-                        case 5:
-                            header = "Status";
-                            break;
-                        case 6:
-                            header = "Total";
-                            break;
-                        case 7:
-                            header = "";
-                            break;
-                    }
-                    contentStream.beginText();
-                    contentStream.newLineAtOffset(currentX, currentY);
-                    contentStream.showText(header);
-                    contentStream.endText();
-                    currentX += columnWidths[i] * (tableWidth / 14);
-                }
-
-                // draw table content
-                for (Invoice invoice : invoiceList) {
-                    currentY -= rowHeight;
-                    currentX = margin;
-                    contentStream.beginText();
-                    contentStream.newLineAtOffset(currentX, currentY);
-                    contentStream.showText(invoice.getProduct());
-                    contentStream.endText();
-                    currentX += columnWidths[0] * (tableWidth / 14);
-
-                    contentStream.beginText();
-                    contentStream.newLineAtOffset(currentX, currentY);
-                    contentStream.showText(invoice.getDescription());
-                    contentStream.endText();
-                    currentX += columnWidths[1] * (tableWidth / 14);
-
-                    contentStream.beginText();
-                    contentStream.newLineAtOffset(currentX, currentY);
-                    contentStream.showText(Float.toString(invoice.getPrice()));
-                    contentStream.endText();
-                    currentX += columnWidths[2] * (tableWidth / 14);
-
-                    contentStream.beginText();
-                    contentStream.newLineAtOffset(currentX, currentY);
-                    contentStream.showText(invoice.getCurrency().name());
-                    contentStream.endText();
-                    currentX += columnWidths[3] * (tableWidth / 14);
-
-                    contentStream.beginText();
-                    contentStream.newLineAtOffset(currentX, currentY);
-                    contentStream.showText(Integer.toString(invoice.getAmount()));
-                    contentStream.endText();
-                    currentX += columnWidths[4] * (tableWidth / 14);
-
-                    contentStream.beginText();
-                    contentStream.newLineAtOffset(currentX, currentY);
-                    contentStream.showText(invoice.getOrderCompleted() ? "Completed" : "Open");
-                    contentStream.endText();
-                    currentX += columnWidths[5] * (tableWidth / 14);
-
-                    contentStream.beginText();
-                    contentStream.newLineAtOffset(currentX, currentY);
-                    contentStream.showText(Float.toString(invoice.getTotal()));
-                    contentStream.endText();
-                    currentX += columnWidths[6] * (tableWidth / 14);
-
-                    // add a blank column at the end
-                    currentX += columnWidths[7] * (tableWidth / 14);
-                }
-                // draw table footer
-                currentY -= rowHeight;
-                currentX = margin;
-                contentStream.beginText();
-                contentStream.newLineAtOffset(currentX, currentY);
-                contentStream.showText("Total:");
-                contentStream.endText();
-
-                currentX += columnWidths[0] * (tableWidth / 14);
-
-                contentStream.beginText();
-                contentStream.newLineAtOffset(currentX, currentY);
-                contentStream.showText("");
-                contentStream.endText();
-
-                currentX += columnWidths[1] * (tableWidth / 14);
-
-                contentStream.beginText();
-                contentStream.newLineAtOffset(currentX, currentY);
-                contentStream.showText("");
-                contentStream.endText();
-
-                currentX += columnWidths[2] * (tableWidth / 14);
-
-                contentStream.beginText();
-                contentStream.newLineAtOffset(currentX, currentY);
-                contentStream.showText("");
-                contentStream.endText();
-
-                currentX += columnWidths[3] * (tableWidth / 14);
-
-                int totalAmount = 0;
-                float totalValue = 0.0f;
-
-                for (Invoice invoice : invoiceList) {
-                    totalAmount += invoice.getAmount();
-                    totalValue += invoice.getTotal();
-                }
-
-                contentStream.beginText();
-                contentStream.newLineAtOffset(currentX, currentY);
-                contentStream.showText(Integer.toString(totalAmount));
-                contentStream.endText();
-
-                currentX += columnWidths[4] * (tableWidth / 14);
-
-                contentStream.beginText();
-                contentStream.newLineAtOffset(currentX, currentY);
-                contentStream.showText("");
-                contentStream.endText();
-
-                currentX += columnWidths[5] * (tableWidth / 14);
-
-                contentStream.beginText();
-                contentStream.newLineAtOffset(currentX, currentY);
-                contentStream.showText(Float.toString(totalValue));
-                contentStream.endText();
-                contentStream.close();
-
-                ByteArrayOutputStream out = new ByteArrayOutputStream();
-                document.save(out);
-                document.close();
-                InputStream in = new ByteArrayInputStream(out.toByteArray());
-
-                // Download the generated PDF file
-                StreamResource resource = new StreamResource("invoice.pdf", () -> in);
-                anchor = new Anchor(resource, "Download");
-                anchor.getElement().setAttribute("download", true);
-                Notification.show("Check in the footer of the page and press download!"
-                        , 3000, Notification.Position.MIDDLE);
-                add(anchor);
-
+                pdfBytes = pdfUtils.generatePdf(invoiceName, cFirstName, cLastName, date, cPhone, emailCustomer, textArea);
             } catch (IOException e) {
-                e.printStackTrace();
+                throw new RuntimeException(e);
             }
+            // Create a StreamResource containing the PDF data
+            StreamResource resource = new StreamResource("invoice.pdf", () -> new ByteArrayInputStream(pdfBytes));
+
+            // Create an Anchor component to trigger the download
+            Anchor downloadLink = new Anchor(resource, "Download PDF");
+
+            // Set the download attribute to trigger a download when clicked
+            downloadLink.getElement().setAttribute("download", true);
+            Notification.show("Check in the footer of the page and press download!"
+                    , 3000, Notification.Position.MIDDLE);
+
+            // Add the download link to the view
+            add(downloadLink);
         });
-        add(controlsLine, board, addsLine,grid, detailsLine);
-    }
+            add(controlsLine, board, addsLine,selectedProductsGrid, detailsLine);
+        }
 
-    private Button createRemoveButton(GridPro<Invoice> grid, Invoice item) {
-        Button button = new Button(new Icon(VaadinIcon.CLOSE), clickEvent -> {
-            ListDataProvider<Invoice> dataProvider = (ListDataProvider<Invoice>) grid
-                    .getDataProvider();
-            dataProvider.getItems().remove(item);
-            dataProvider.refreshAll();
-        });
-        button.setClassName("delete-button");
-        button.addThemeName("small");
-        return button;
-    }
+    private Grid<Product> createSelectedProductsGrid () {
+            Grid<Product> grid = new Grid<>(Product.class);
+            grid.setItems();
+            grid.setColumns("name", "price", "stockCount");
+//            grid.addComponentColumn(invoice -> {
+//                NumberField quantityField = new NumberField();
+//                quantityField.setValue((double) invoice.);
+//                quantityField.addValueChangeListener(event -> {
+//                    double newValue = event.getValue() != null ? event.getValue() : 0;
+//                    invoice.setQuantity((int) newValue);
+//                });
+//                return quantityField;
+//            }).setHeader("Quantity");
 
-    private void setStatus(String value) {
-        status.setText("Status: " + value);
-        status.setVisible(true);
-    }
+            return grid;
+        }
 
-    private static void displayNotification(String propertyName, Invoice item,
-                                            String newValue) {
-        Notification.show(propertyName + " was updated to be: " + newValue
-                + " for product " + item.toString());
-    }
+        private Button createRemoveButton (Grid < Product > grid, Product item){
+            Button button = new Button(new Icon(VaadinIcon.CLOSE), clickEvent -> {
+                ListDataProvider<Product> dataProvider = (ListDataProvider<Product>) grid
+                        .getDataProvider();
+                dataProvider.getItems().remove(item);
+                dataProvider.refreshAll();
+            });
+            button.setClassName("delete-button");
+            button.addThemeName("small");
+            return button;
+        }
 
-    private static void displayNotification(String propertyName, Invoice item) {
-        Notification.show(
-                propertyName + " cannot be set for product " + item.toString());
-    }
-
-    private static List<Invoice> createItems() {
-        Random random = new Random(0);
-        return IntStream.range(1, 14)
-                .mapToObj(index -> createInvoice(index, random))
-                .collect(Collectors.toList());
-    }
-
-    private static Invoice createInvoice(int index, Random random) {
-
-        invoice = new Invoice();
-        invoice.setNrCrt(random.nextInt(100000) / 100);
-        invoice.setProduct("PVR2019");
-        invoice.setDescription("Say Dock");
-        invoice.setPrice(random.nextInt(100000) / 100f);
-        invoice.setCurrency(getRandomCurrency());
-        invoice.setAmount(1 + random.nextInt((10 - 1) + 1));
-        invoice.setOrderCompleted(random.nextBoolean());
-        invoice.setAvailability(Availability.COMING);
-        invoice.setTotal(1 + random.nextInt((1000 - 1) + 1));
-
-        return invoice;
-    }
+        private void setStatus (String value){
+            status.setText("Status: " + value);
+            status.setVisible(true);
+        }
 }

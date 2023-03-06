@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -25,6 +26,10 @@ public class ProductService implements IProduct {
     public List<ProductDTO> findAllProducts() {
         return productRepository.findAll().stream ().map (productMapper::toDto)
                                 .collect(Collectors.toList());
+    }
+    @Override
+    public List<Product> findAll(){
+        return productRepository.findAll();
     }
 
     @Override
@@ -80,5 +85,10 @@ public class ProductService implements IProduct {
                 .findByNameContainingIgnoreCase(name)
                 .stream().map (productMapper::toDto)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public Product findByName(String name) {
+        return productRepository.findByName(name);
     }
 }

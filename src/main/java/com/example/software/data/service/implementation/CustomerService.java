@@ -1,7 +1,7 @@
 package com.example.software.data.service.implementation;
 
+import com.example.software.data.entity.Employee;
 import com.example.software.data.entity.dto.CustomerDTO;
-import com.example.software.data.entity.dto.EmployeeDTO;
 import com.example.software.data.entity.mappers.CustomerMapper;
 import com.example.software.data.repository.CustomerRepository;
 import com.example.software.data.service.IPerson;
@@ -48,6 +48,11 @@ public class CustomerService implements IPerson<CustomerDTO, Long> {
     @Override
     public int count() {
         return 0;
+    }
+
+    @Override
+    public List<Employee> find() {
+        return null;
     }
 
     @Override
