@@ -1,7 +1,7 @@
 package com.example.software.data.entity;
 
+import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import javax.persistence.MappedSuperclass;
@@ -11,7 +11,7 @@ import java.util.Objects;
 
 @Getter
 @Setter
-@NoArgsConstructor
+@AllArgsConstructor
 @MappedSuperclass
 public class Person extends AbstractEntity {
 
@@ -29,6 +29,13 @@ public class Person extends AbstractEntity {
     @Size(max = 20)
     @Pattern(regexp = "^(\\+\\d+)?([ -]?\\d+){4,14}$")
     private String phone = "";
+
+    public Person() {
+    }
+
+    public Person(Long id) {
+        super(id);
+    }
 
     @Override
     public boolean equals(Object o) {

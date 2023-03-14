@@ -1,5 +1,6 @@
 package com.example.software.data.service.implementation;
 
+import com.example.software.data.entity.Customer;
 import com.example.software.data.entity.Employee;
 import com.example.software.data.entity.dto.CustomerDTO;
 import com.example.software.data.entity.mappers.CustomerMapper;
@@ -38,6 +39,17 @@ public class CustomerService implements IPerson<CustomerDTO, Long> {
             return;
         }
         customerRepository.save (customerMapper.toCustomer (customerDTO));
+    }
+    @Override
+    public Customer saveCus(Customer customer) {
+        customer.getFirstName();
+        customer.getLastName();
+       return customerRepository.save(customer);
+    }
+
+    @Override
+    public Employee saveEmplo(Employee employee) {
+        return null;
     }
 
     @Override

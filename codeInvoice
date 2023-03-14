@@ -1,0 +1,90 @@
+//        grid.addEditColumn(item -> {
+//                    List<Product> products = item.getProducts();
+//                    return products.isEmpty() ? "" : products.stream().map(Product::getName).collect(Collectors.joining(", "));
+//                }, "product")
+//                .text((item, name) -> {
+//                    // Look up the product by name and add it to the item's list of products
+//                    Product product = productService.findByName(name);
+//                    if (product != null) {
+//                        item.getProducts().add(product);
+//                        grid.getDataProvider().refreshItem(item);
+//                    } else {
+//                        // Display an error message if the product wasn't found
+//                        displayNotification("Product not found", item, name);
+//                    }
+//                }).setHeader("Product").setFlexGrow(1).setResizable(true);
+//
+////            }
+//        }).setHeader("Products");
+//        grid.addColumn(item -> item.getProducts().getPrice())
+//                .text((item, newValue) -> {
+//                    try {
+//                        item.setPrice(Float.valueOf(newValue));
+//                        displayNotification("Price", item, newValue);
+//                    } catch (Exception e) {
+//                        displayNotification("Price", item);
+//                    }
+//                }).setHeader("Price").setTextAlign(ColumnTextAlign.END);
+//
+//        ComponentRenderer<Div, Invoice> currencyRenderer = new ComponentRenderer<>(
+//                invoice -> {
+//                    Div icon = new Div();
+//                    icon.setText(invoice.getCurrency().name());
+//                    icon.setClassName("icon-"
+//                            + invoice.getCurrency().name().toLowerCase());
+//                    return icon;
+//                });
+//
+//        grid.addEditColumn(Invoice::getCurrency, currencyRenderer)
+//                .select((item, newValue) -> {
+//                    item.setCurrency(newValue);
+//                    displayNotification("Currency", item,
+//                            newValue.getStringRepresentation());
+//                }, Currency.class)
+//                .setComparator(Comparator.comparing(
+//                        inv -> inv.getCurrency().getStringRepresentation()))
+//                .setHeader("Currency").setWidth("150px");
+
+//        grid.addEditColumn(Invoice::getAmount, "amount")
+//                .text((item, newValue) -> {
+//                    try {
+//                        item.setAmount(Integer.valueOf(newValue));
+//                        displayNotification("Amount", item, newValue);
+//                    } catch (Exception e) {
+//                        displayNotification("Amount", item);
+//                    }
+//                }).setHeader("Amount").setTextAlign(ColumnTextAlign.END);
+//
+//        ComponentRenderer<Span, Invoice> statusRenderer = new ComponentRenderer<>(
+//                invoice -> {
+//                    Span badge = new Span();
+//                    badge.setText(
+//                            invoice.getOrderCompleted() ? "Completed" : "Open");
+//                    badge.getElement().setAttribute("theme",
+//                            invoice.getOrderCompleted() ? "badge success"
+//                                    : "badge");
+//                    return badge;
+//                });
+//        grid.addEditColumn(Invoice::getOrderCompleted, statusRenderer)
+//                .checkbox((item, newValue) -> {
+//                    item.setOrderCompleted(newValue);
+//                    displayNotification("Order completed ", item,
+//                            newValue.toString());
+//                })
+//                .setComparator(
+//                        Comparator.comparing(inv -> inv.getOrderCompleted()))
+//                .setHeader("Status");
+//        grid.addEditColumn(Invoice::getTotal,
+//                        TemplateRenderer.<Invoice> of("[[item.symbol]][[item.total]]")
+//                                .withProperty("symbol",
+//                                        invoice -> invoice.getCurrency().getSymbol())
+//                                .withProperty("total", Invoice::getTotal))
+//                .text((item, newValue) -> {
+//                    try {
+//                        item.setTotal(Integer.parseInt(newValue));
+//                        displayNotification("Total", item, newValue);
+//                    } catch (Exception e) {
+//                        displayNotification("Total", item);
+//                    }
+//                }).setComparator(Comparator.comparing(inv -> inv.getTotal()))
+//                .setHeader("Total").setTextAlign(ColumnTextAlign.END);

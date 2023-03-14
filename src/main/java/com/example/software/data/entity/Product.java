@@ -2,6 +2,7 @@ package com.example.software.data.entity;
 
 import com.example.software.data.entity.enums.Availability;
 import com.example.software.data.entity.enums.UM;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
 
 import javax.persistence.*;
@@ -9,15 +10,15 @@ import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Set;
+
 
 @Getter
 @Setter
-@AllArgsConstructor
 @NoArgsConstructor
 @ToString
 @Entity
+@Table(name="dbw_product")
 public class Product implements Serializable {
 
     @Id
@@ -48,6 +49,8 @@ public class Product implements Serializable {
     @NotNull
     private Availability availability = Availability.COMING;
 
-    @ManyToMany(mappedBy = "lstProduct", fetch = FetchType.EAGER)
-    private List<Invoice> invoices = new ArrayList<>();
+    @OneToMany(fetch = FetchType.EAGER, cascade = {CascadeType.ALL}, mappedBy = "product")
+    @JsonIgnore
+    private Set<InvoiceDetails> invoiceDetails;
+
 }

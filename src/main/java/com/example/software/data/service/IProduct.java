@@ -9,7 +9,8 @@ import java.util.List;
 
 public interface IProduct {
 
-    //todo: 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 token github
+    Integer getPrice(Long productId);
+
     List<ProductDTO> findAllProducts();
 
     List<Product> findAll();

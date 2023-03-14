@@ -1,5 +1,6 @@
 package com.example.software.data.service;
 
+import com.example.software.data.entity.Customer;
 import com.example.software.data.entity.Employee;
 
 import java.util.List;
@@ -16,6 +17,10 @@ public interface IPerson<T, ID> {
     T findById(ID id);
 
     void save(T object);
+
+    Customer saveCus(Customer customer);
+
+    Employee saveEmplo(Employee employee);
 
     void delete(T object);
 

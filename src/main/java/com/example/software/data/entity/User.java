@@ -15,7 +15,7 @@ import java.util.Set;
 @NoArgsConstructor
 @ToString
 @Entity
-@Table(name = "user_app")
+@Table(name="dbw_user")
 public class User extends AbstractEntity {
 
     private String username;

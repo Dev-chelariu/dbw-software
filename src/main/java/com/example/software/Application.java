@@ -23,7 +23,10 @@ import javax.sql.DataSource;
  */
 @SpringBootApplication
 @Theme(value = "dbwsoftware")
-@PWA(name = "DBW-Software",shortName = "DBW")
+@PWA(
+        name = "DBW-Software",
+        shortName = "DBW",
+        offlineResources = {"images/logo.jpeg"})
 @NpmPackage(value = "line-awesome", version = "1.3.0")
 @NpmPackage(value = "@vaadin-component-factory/vcf-nav", version = "1.0.6")
 public class Application implements AppShellConfigurator {

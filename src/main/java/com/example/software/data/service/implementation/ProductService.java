@@ -23,6 +23,12 @@ public class ProductService implements IProduct {
     private final ProductMapper productMapper;
 
     @Override
+    public Integer getPrice(Long productId) {
+        Product product = productRepository.findById(productId).orElseThrow();
+        return product.getPrice();
+    }
+
+    @Override
     public List<ProductDTO> findAllProducts() {
         return productRepository.findAll().stream ().map (productMapper::toDto)
                                 .collect(Collectors.toList());

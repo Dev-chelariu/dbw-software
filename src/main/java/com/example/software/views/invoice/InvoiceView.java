@@ -1,9 +1,8 @@
 package com.example.software.views.invoice;
 
-import com.example.software.data.entity.Customer;
-import com.example.software.data.entity.Employee;
-import com.example.software.data.entity.Product;
+import com.example.software.data.entity.*;
 import com.example.software.data.service.implementation.EmployeeService;
+import com.example.software.data.service.implementation.InvoiceService;
 import com.example.software.data.service.implementation.ProductService;
 import com.example.software.views.MainLayout;
 import com.example.software.views.invoice.ExportUtils.PdfUtils;
@@ -25,21 +24,25 @@ import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
-import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.textfield.EmailField;
+import com.vaadin.flow.component.textfield.IntegerField;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.data.binder.BeanValidationBinder;
 import com.vaadin.flow.data.binder.Binder;
+import com.vaadin.flow.data.binder.ValidationException;
 import com.vaadin.flow.data.provider.ListDataProvider;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouteAlias;
 import com.vaadin.flow.server.StreamResource;
+import lombok.extern.slf4j.Slf4j;
 
 import javax.annotation.security.PermitAll;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -48,24 +51,48 @@ import java.util.List;
 @RouteAlias(value = "", layout = MainLayout.class)
 @JsModule("./styles/shared-styles.js")
 @PermitAll
+@Slf4j
 public class InvoiceView extends Div {
 
-    private Grid<Product> selectedProductsGrid;
+    private Grid<InvoiceDetails> selectedProductsGrid;
+    private final InvoiceService invoiceService;
+    private final Invoice currentInvoice = new Invoice();
+    List<InvoiceDetails> detailsList = new ArrayList<>();
+    TextField name = new TextField();
+    TextField firstName = new TextField("First Name");
+    TextField lastName = new TextField("Last Name");
+    TextField phone = new TextField("Phone");
+    EmailField email = new EmailField("Email");
+    TextArea details = new TextArea("Details");
+    DatePicker invoiceDate = new DatePicker();
+    ComboBox<Employee> employee = new ComboBox<>("Employee");
+    IntegerField quantity = new IntegerField();
 
-    private final EmployeeService employeeService;
-
-    List<Product> invoiceList = new ArrayList<>();
     Customer customer = new Customer();
-    TextField cFirstName, cLastName, cPhone;
-    EmailField emailCustomer;
-    TextArea textArea;
     PdfUtils pdfUtils = new PdfUtils();
+    Span totalText = new Span();
     Span status;
-    Binder<Customer> binder = new Binder<>(Customer.class);
+    Button saveBtn = new Button("Save invoice", VaadinIcon.CHECK.create());
 
-    public InvoiceView(EmployeeService employeeService, ProductService productService) {
-        this.employeeService = employeeService;
+    public InvoiceView(EmployeeService employeeService, ProductService productService, InvoiceService invoiceService) {
+        this.invoiceService = invoiceService;
         this.selectedProductsGrid = createSelectedProductsGrid();
+
+       ListDataProvider<InvoiceDetails> dataProvider = new ListDataProvider<>(new ArrayList<>());
+        selectedProductsGrid.setDataProvider(dataProvider);
+
+        Binder<Invoice> cBinder = new BeanValidationBinder<>(Invoice.class);
+        cBinder.bind(name, Invoice::getName, Invoice::setName);
+        cBinder.bind(invoiceDate, Invoice::getInvoiceDate, Invoice::setInvoiceDate);
+
+        Binder<Customer> custBinder = new BeanValidationBinder<>(Customer.class);
+        custBinder.bind(firstName, Customer::getFirstName, Customer::setFirstName);
+        custBinder.bind(lastName, Customer::getLastName, Customer::setLastName);
+        custBinder.bind(email, Customer::getEmail, Customer::setEmail);
+        custBinder.bind(phone,  Customer::getPhone, Customer::setPhone);
+        custBinder.bind(details,  Customer::getDetails, Customer::setDetails);
+
+        dataProvider.getItems().addAll(detailsList);
 
         setId("container");
         // Controls part
@@ -99,11 +126,26 @@ public class InvoiceView extends Div {
         dialog.setConfirmText("Save");
         dialog.addConfirmListener(event -> setStatus("Saved"));
 
-        Button saveBtn = new Button("Save invoice");
         saveBtn.setThemeName("primary");
         saveBtn.addClickListener(event -> {
+
+            try {
             dialog.open();
-            status.setVisible(false);
+                custBinder.writeBean(customer);
+            cBinder.writeBean(currentInvoice);
+
+            Notification.show("Customer saved successfully!");
+
+            cBinder.readBean(new Invoice());
+
+            } catch (ValidationException e) {
+                throw new RuntimeException(e);
+            }
+            validateAndSave();
+
+            // Show a success message and clear the form
+            status.setText("Invoice saved successfully!");
+            status.setVisible(true);
         });
         status = new Span();
         status.setVisible(false);
@@ -120,12 +162,11 @@ public class InvoiceView extends Div {
             dialog1.open();
             status.setVisible(false);
 
-            binder.setBean(customer);
-            binder.bind(cFirstName, Customer::getFirstName, Customer::setFirstName);
-            binder.bind(cLastName, Customer::getLastName, Customer::setLastName);
-            binder.bind(emailCustomer, Customer::getEmail, Customer::setEmail);
-            binder.bind(cPhone, Customer::getPhone, Customer::setPhone);
-            binder.bind(textArea, Customer::getDetails, Customer::setDetails);
+            custBinder.bind(firstName, Customer::getFirstName, Customer::setFirstName);
+            custBinder.bind(lastName, Customer::getLastName, Customer::setLastName);
+            custBinder.bind(email, Customer::getEmail, Customer::setEmail);
+            custBinder.bind(phone, Customer::getPhone, Customer::setPhone);
+            custBinder.bind(details, Customer::getDetails, Customer::setDetails);
 
             customer.setFirstName("");
             customer.setLastName("");
@@ -152,64 +193,47 @@ public class InvoiceView extends Div {
         inputsFormWrapper.add(inputsFormLayout);
 
         // Inputs
-        TextField invoiceName = new TextField();
-        invoiceName.getElement().setAttribute("colspan", "2");
-        invoiceName.setLabel("Invoice Name");
-        invoiceName.setClassName("large");
+        name.getElement().setAttribute("colspan", "2");
+        name.setLabel("Invoice name");
+        name.setClassName("large");
 
-        ComboBox<Employee> employeeBring = new ComboBox<>("Employee");
-        // Get a list of Employee objects from your service
-        List<Employee> employees = employeeService.find();
-
-        // Create a ListDataProvider from the list of Employee objects
-        ListDataProvider<Employee> dataProvider = new ListDataProvider<>(employees);
-
-        // Set the dataProvider as the items in the ComboBox
-        employeeBring.setDataProvider(dataProvider);
-
-        // Set the label generator for the ComboBox
-        employeeBring.setItemLabelGenerator(Employee::getFirstName);
-
+        employee.setItems(employeeService.find());
+        employee.setItemLabelGenerator(Employee::getFirstName);
+        employee.addValueChangeListener(event -> {
+            if (event.getValue() != null) {
+                currentInvoice.setEmployee(event.getValue());
+            }
+        });
         // Set the placeholder text for the ComboBox
-        employeeBring.setPlaceholder("Select an employee");
+        employee.setPlaceholder("Select an employee");
 
         // Set the Date for the DatePicker
-        DatePicker date = new DatePicker();
-        date.setLabel("Date");
+        invoiceDate.setLabel("Date");
 
         // Inputs
-        cFirstName = new TextField();
-        cFirstName.getElement().setAttribute("colspan", "2");
-        cFirstName.setLabel("First Name");
-        cFirstName.setClassName("large");
+        firstName.getElement().setAttribute("colspan", "2");
+        firstName.setClassName("large");
         // Inputs
-        cLastName = new TextField();
-        cLastName.getElement().setAttribute("colspan", "2");
-        cLastName.setLabel("Last Name");
-        cLastName.setClassName("large");
+        lastName.getElement().setAttribute("colspan", "2");
+        lastName.setClassName("large");
 
         // Inputs
-        emailCustomer = new EmailField();
-        emailCustomer.getElement().setAttribute("colspan", "2");
-        emailCustomer.setLabel("Email");
-        emailCustomer.setClassName("large");
+        email.getElement().setAttribute("colspan", "2");
+        email.setClassName("large");
 
         // Inputs
-        cPhone = new TextField();
-        cPhone.getElement().setAttribute("colspan", "2");
-        cPhone.setPattern(
+        phone.getElement().setAttribute("colspan", "2");
+        phone.setPattern(
                 "^[+]?[(]?[0-9]{3}[)]?[-s.]?[0-9]{3}[-s.]?[0-9]{4,6}$");
-        cPhone.setHelperText("Format: +(123)456-7890");
-        cPhone.setLabel("Phone");
-        cPhone.setClassName("large");
+        phone.setHelperText("Format: +(123)456-7890");
+        phone.setClassName("large");
 
         //Text Area
-        textArea = new TextArea();
         int charLimit = 140;
-        textArea.setLabel("Details invoice");
-        textArea.setMaxLength(charLimit);
-        textArea.setValueChangeMode(ValueChangeMode.EAGER);
-        textArea.addValueChangeListener(e -> {
+        details.setLabel("Details invoice");
+        details.setMaxLength(charLimit);
+        details.setValueChangeMode(ValueChangeMode.EAGER);
+        details.addValueChangeListener(e -> {
             e.getSource()
                     .setHelperText(e.getValue().length() + "/" + charLimit);
         });
@@ -220,7 +244,7 @@ public class InvoiceView extends Div {
                 new FormLayout.ResponsiveStep("30em", 4));
         inputsFormLayout.setId("inputs");
 
-        inputsFormLayout.add(invoiceName, employeeBring, date, cFirstName, cLastName, emailCustomer, cPhone, textArea);
+        inputsFormLayout.add(name, employee, invoiceDate, firstName, lastName, email, phone, details);
         board.addRow(inputsFormWrapper);
 
         // Adds line
@@ -238,21 +262,15 @@ public class InvoiceView extends Div {
         btnWrapper.add(addProductToInvoiceBtn, exportPdfButton);
         addsLine.add(btnWrapper);
 
-        // Grid Pro
-        selectedProductsGrid.setItems(invoiceList);
-        selectedProductsGrid.setHeight("600px");
-
+        selectedProductsGrid.setHeight("700px");
         // add the grids to the layout
         add(selectedProductsGrid);
 
         // create the add transaction button
         addProductToInvoiceBtn.addClickListener(event -> {
             List<Product> allProducts = productService.findAll();
+            AddTransactionDialog addTransactionDialog = new AddTransactionDialog(allProducts, this::accept);
 
-            AddTransactionDialog addTransactionDialog = new AddTransactionDialog(allProducts, selectedProducts -> {
-                selectedProductsGrid.setItems(selectedProducts);
-                selectedProductsGrid.getDataProvider().refreshAll();
-            });
             addTransactionDialog.open();
         });
 
@@ -263,33 +281,23 @@ public class InvoiceView extends Div {
                 .setTextAlign(ColumnTextAlign.CENTER);
 
         selectedProductsGrid.setMultiSort(true);
-
         selectedProductsGrid.getColumns().forEach(column -> column.setResizable(true));
-        selectedProductsGrid.setHeight("500px");
 
         // Details line
         Div detailsLine = new Div();
 
-        Select<String> totalSelect = new Select<>("USD", "EUR", "GBP");
-        totalSelect.setValue("EUR");
-        totalSelect.getElement().setAttribute("theme", "custom");
-        totalSelect.setClassName("currency-selector");
+        updateTotal(selectedProductsGrid, totalText);
 
-        Span totalText = new Span();
-        totalText.setText("Total in ");
+        detailsLine.setHeight("40px");
 
-        Span priceText = new Span();
-        priceText.setClassName("total");
-        priceText.setText("812");
-
-        detailsLine.add(totalText, totalSelect, priceText);
+        detailsLine.add(totalText);
         detailsLine.setClassName("controls-line footer");
 
         exportPdfButton.addClickListener(eventPdf -> {
             // Generate the PDF and store it in a byte array
             byte[] pdfBytes;
             try {
-                pdfBytes = pdfUtils.generatePdf(invoiceName, cFirstName, cLastName, date, cPhone, emailCustomer, textArea);
+                pdfBytes = pdfUtils.createPdf(name, firstName, lastName, invoiceDate, phone, email, details, employee, detailsList);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -310,26 +318,9 @@ public class InvoiceView extends Div {
             add(controlsLine, board, addsLine,selectedProductsGrid, detailsLine);
         }
 
-    private Grid<Product> createSelectedProductsGrid () {
-            Grid<Product> grid = new Grid<>(Product.class);
-            grid.setItems();
-            grid.setColumns("name", "price", "stockCount");
-//            grid.addComponentColumn(invoice -> {
-//                NumberField quantityField = new NumberField();
-//                quantityField.setValue((double) invoice.);
-//                quantityField.addValueChangeListener(event -> {
-//                    double newValue = event.getValue() != null ? event.getValue() : 0;
-//                    invoice.setQuantity((int) newValue);
-//                });
-//                return quantityField;
-//            }).setHeader("Quantity");
-
-            return grid;
-        }
-
-        private Button createRemoveButton (Grid < Product > grid, Product item){
+        private Button createRemoveButton (Grid <InvoiceDetails> grid, InvoiceDetails item){
             Button button = new Button(new Icon(VaadinIcon.CLOSE), clickEvent -> {
-                ListDataProvider<Product> dataProvider = (ListDataProvider<Product>) grid
+                ListDataProvider<InvoiceDetails> dataProvider = (ListDataProvider<InvoiceDetails>) grid
                         .getDataProvider();
                 dataProvider.getItems().remove(item);
                 dataProvider.refreshAll();
@@ -343,4 +334,75 @@ public class InvoiceView extends Div {
             status.setText("Status: " + value);
             status.setVisible(true);
         }
+        private Grid<InvoiceDetails> createSelectedProductsGrid () {
+        Grid<InvoiceDetails> grid = new Grid<>(InvoiceDetails.class);
+        grid.setItems(detailsList);
+
+            grid.addColumn(details -> details.getProduct().getName())
+                    .setHeader("Name");
+            grid.addColumn(details -> details.getProduct().getPrice())
+                   .setHeader("Price");
+            grid.addColumn(details -> details.getProduct().getStockCount())
+                    .setHeader("Stock Count");
+
+            // Remove the columns that you don't want to display
+            grid.removeColumnByKey("codProduct");
+            grid.removeColumnByKey("invoiceId");
+            grid.removeColumnByKey("product");
+            grid.removeColumnByKey("quantity");
+            grid.removeColumnByKey("total");
+            grid.removeColumnByKey("invoice");
+
+        grid.addComponentColumn(productInvoice -> {
+            quantity = new IntegerField();
+            quantity.setValue(productInvoice.getQuantity());
+            quantity.addValueChangeListener(event -> {
+                int newValue = event.getValue() != null ? event.getValue() : 0;
+                productInvoice.setQuantity(newValue);
+                productInvoice.setTotal(productInvoice.getProduct().getPrice() * newValue);
+                grid.getDataProvider().refreshItem(productInvoice);
+                updateTotal(grid, totalText);
+            });
+            return quantity;
+        }).setHeader("Quantity");
+
+        grid.addColumn(details -> details.getTotal())
+                    .setHeader("Total");
+
+        return grid;
+    }
+    private void addSelectedProductsToInvoice(List<Product> selectedProducts) {
+
+        for (Product product : selectedProducts) {
+            InvoiceDetails details = new InvoiceDetails();
+            details.setCodProduct(product.getCodProduct());
+            details.setInvoiceId(currentInvoice.getInvoiceId());
+            details.setProduct(product);
+            detailsList.add(details);
+        }
+        selectedProductsGrid.setItems(detailsList);
+        selectedProductsGrid.getDataProvider().refreshAll();
+    }
+
+    private void accept(List<Product> selectedProducts) {
+        addSelectedProductsToInvoice(selectedProducts);
+       currentInvoice.getInvoiceDetails().addAll(selectedProductsGrid.getSelectedItems());
+    }
+    private void validateAndSave() {
+          invoiceService.saveInvoice(currentInvoice, customer);
+          invoiceService.saveInvoiceDetails(currentInvoice, detailsList);
+    }
+
+    private void updateTotal(Grid<InvoiceDetails> grid, Span totalText) {
+
+        // Calculate and set the initial total
+        int newTotal = detailsList.stream().mapToInt(InvoiceDetails::getTotal).sum();
+        totalText.setText(" Total: " + newTotal + " lei");
+
+        // Update the total whenever the quantity of a product changes
+        grid.getDataProvider().addDataProviderListener(event -> {
+            int updatedTotal = detailsList.stream().mapToInt(InvoiceDetails::getTotal).sum();
+            totalText.setText(" Total: " + updatedTotal + " lei");
+        });
+    }
 }

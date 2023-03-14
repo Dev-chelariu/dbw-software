@@ -10,7 +10,7 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "emails")
+@Table(name = "dbw_inbox")
 public class Email extends AbstractEntity implements Serializable {
 
     @javax.validation.constraints.Email

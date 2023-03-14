@@ -24,7 +24,9 @@ public class EmployeeMapper {
 
     public Employee toEmployee(EmployeeDTO employeeDTO){
         modelMapper.getConfiguration()
-                   .setMatchingStrategy(MatchingStrategies.LOOSE);
+                   .setMatchingStrategy(MatchingStrategies.LOOSE)
+                .setAmbiguityIgnored(true);
+
         return modelMapper.map(employeeDTO, Employee.class);
     }
 }

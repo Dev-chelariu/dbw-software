@@ -1,6 +1,8 @@
 package com.example.software.views.invoice.ExportUtils;
 
-import com.example.software.data.entity.Product;
+import com.example.software.data.entity.Employee;
+import com.example.software.data.entity.InvoiceDetails;
+import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.component.textfield.TextArea;
@@ -14,21 +16,19 @@ import org.apache.pdfbox.pdmodel.font.PDType1Font;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 
 public class PdfUtils {
 
-    public byte[] generatePdf(TextField invoiceName,TextField cFirstName, TextField cLastName,
-                              DatePicker date,TextField cPhone, EmailField emailCustomer,
-                              TextArea textArea) throws IOException {
+    public byte[] createPdf(TextField invoiceName, TextField cFirstName, TextField cLastName,
+                            DatePicker date, TextField cPhone, EmailField emailCustomer,
+                            TextArea textArea, ComboBox<Employee> employee,List<InvoiceDetails> detailsList) throws IOException {
 
-        // Generate the invoice PDF using PDFBox
         PDDocument document = new PDDocument();
         PDPage page = new PDPage(PDRectangle.A4);
         document.addPage(page);
 
-        // Set up a content stream for the page
+        // Create a new content stream for the page
         PDPageContentStream contentStream = new PDPageContentStream(document, page);
 
         // Set the font
@@ -42,11 +42,6 @@ public class PdfUtils {
         contentStream.endText();
 
         // Add content to the PDF document
-//                contentStream.beginText();
-//                contentStream.newLineAtOffset(50, 720);
-//                contentStream.showText("Nr. crt: " + invoice.getNrCrt());
-//                contentStream.endText();
-
         contentStream.beginText();
         contentStream.newLineAtOffset(50, 700);
         contentStream.showText("Date: " + date.getValue());
@@ -80,11 +75,12 @@ public class PdfUtils {
         contentStream.showText("Details: " + textArea.getValue());
         contentStream.endText();
 
-//        // Write the employee responsible
-//        contentStream.beginText();
-//        contentStream.newLineAtOffset(50, 550);
-//        contentStream.showText("Employee: " + employee.getFirstName());
-//        contentStream.endText();
+        contentStream.beginText();
+        contentStream.newLineAtOffset(50, 550);
+        Employee selectedEmployee = employee.getValue();
+        String employeeName = selectedEmployee.getFirstName();
+        contentStream.showText("Employee: " + employeeName);
+        contentStream.endText();
 
         // set table parameters  //table
         float margin = 65;
@@ -93,7 +89,7 @@ public class PdfUtils {
         float rowHeight = 20f;
         float tableTopY = yStartNewPage;
         float tableBottomY = margin;
-        float[] columnWidths = {1.5f, 3f, 2f, 2f, 1.5f, 2f, 2f, 2f};
+        float[] columnWidths = {3f, 2f, 2f, 3f};
 
         float currentY = tableTopY;
         float currentX = margin;
@@ -102,27 +98,18 @@ public class PdfUtils {
             String header = "";
             switch (i) {
                 case 0:
-                    header = "Product";
+                    header = "Name";
                     break;
                 case 1:
-                    header = "Description";
-                    break;
-                case 2:
                     header = "Price";
                     break;
+                case 2:
+                    header = "Quantity";
+                    break;
                 case 3:
-                    header = "Currency";
-                    break;
-                case 4:
-                    header = "Amount";
-                    break;
-                case 5:
-                    header = "Status";
-                    break;
-                case 6:
                     header = "Total";
                     break;
-                case 7:
+                case 4:
                     header = "";
                     break;
             }
@@ -132,109 +119,74 @@ public class PdfUtils {
             contentStream.endText();
             currentX += columnWidths[i] * (tableWidth / 14);
         }
-
         // draw table content
-        List<Product> productList = new ArrayList<>();
-        for (Product product : productList) {
+
+        for (InvoiceDetails product : detailsList) {
             currentY -= rowHeight;
             currentX = margin;
             contentStream.beginText();
             contentStream.newLineAtOffset(currentX, currentY);
-            //  contentStream.showText(product.getProducts().toString()); //todo: Check here
+          //  contentStream.showText(product.getProduct().getName());
             contentStream.endText();
             currentX += columnWidths[0] * (tableWidth / 14);
 
+
             contentStream.beginText();
             contentStream.newLineAtOffset(currentX, currentY);
-            //  contentStream.showText(Float.toString(invoice.getPrice()));
+           // contentStream.showText((product.getProduct().getPrice()).toString());
+            contentStream.endText();
+            currentX += columnWidths[1] * (tableWidth / 14);
+
+            contentStream.beginText();
+            contentStream.newLineAtOffset(currentX, currentY);
+            contentStream.showText(String.valueOf(product.getQuantity()));
             contentStream.endText();
             currentX += columnWidths[2] * (tableWidth / 14);
 
-//            contentStream.beginText();
-//            contentStream.newLineAtOffset(currentX, currentY);
-//            contentStream.showText(Integer.toString(product.getAmount()));
-//            contentStream.endText();
-//            currentX += columnWidths[4] * (tableWidth / 14);
-
-//            contentStream.beginText();
-//            contentStream.newLineAtOffset(currentX, currentY);
-//            contentStream.showText(product.getOrderCompleted() ? "Completed" : "Open");
-//            contentStream.endText();
-//            currentX += columnWidths[5] * (tableWidth / 14);
-
-//            contentStream.beginText();
-//            contentStream.newLineAtOffset(currentX, currentY);
-//            contentStream.showText(Float.toString(product.getTotal()));
-//            contentStream.endText();
-//            currentX += columnWidths[6] * (tableWidth / 14);
-
-            // add a blank column at the end
-            currentX += columnWidths[7] * (tableWidth / 14);
+            contentStream.beginText();
+            contentStream.newLineAtOffset(currentX, currentY);
+            contentStream.showText(String.valueOf(product.getTotal()));
+            contentStream.endText();
+            currentX += columnWidths[3] * (tableWidth / 14);
         }
-        // draw table footer
+
+        //footer
         currentY -= rowHeight;
         currentX = margin;
+
         contentStream.beginText();
         contentStream.newLineAtOffset(currentX, currentY);
         contentStream.showText("Total:");
         contentStream.endText();
 
-        currentX += columnWidths[0] * (tableWidth / 14);
+        currentX += columnWidths[0] * (tableWidth / 10);
 
         contentStream.beginText();
         contentStream.newLineAtOffset(currentX, currentY);
         contentStream.showText("");
         contentStream.endText();
 
-        currentX += columnWidths[1] * (tableWidth / 14);
+        currentX += columnWidths[1] * (tableWidth / 10);
 
-        contentStream.beginText();
-        contentStream.newLineAtOffset(currentX, currentY);
-        contentStream.showText("");
-        contentStream.endText();
-
-        currentX += columnWidths[2] * (tableWidth / 14);
-
-        contentStream.beginText();
-        contentStream.newLineAtOffset(currentX, currentY);
-        contentStream.showText("");
-        contentStream.endText();
-
-        currentX += columnWidths[3] * (tableWidth / 14);
-
-        int totalAmount = 0;
-        float totalValue = 0.0f;
+//        contentStream.beginText();
+//        contentStream.newLineAtOffset(currentX, currentY);
+//        contentStream.showText(Integer.toString(totalQuantity));
+//        contentStream.endText();
+//
+//        currentX += columnWidths[2] * (tableWidth / 10);
+//
+//        contentStream.beginText();
+//        contentStream.newLineAtOffset(currentX, currentY);
+//        contentStream.showText(Float.toString(totalValue));
+//        contentStream.endText();
 
 
-//                for (Invoice invoice : invoiceList) {
-////                    totalAmount += invoice.getAmount();
-////                    totalValue += invoice.getTotal();
-////                }
-
-        contentStream.beginText();
-        contentStream.newLineAtOffset(currentX, currentY);
-        contentStream.showText(Integer.toString(totalAmount));
-        contentStream.endText();
-
-        currentX += columnWidths[4] * (tableWidth / 14);
-
-        contentStream.beginText();
-        contentStream.newLineAtOffset(currentX, currentY);
-        contentStream.showText("");
-        contentStream.endText();
-
-        currentX += columnWidths[5] * (tableWidth / 14);
-
-        contentStream.beginText();
-        contentStream.newLineAtOffset(currentX, currentY);
-        contentStream.showText(Float.toString(totalValue));
-        contentStream.endText();
+        // Close the content stream and save the PDF
         contentStream.close();
-
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        document.save(out);
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        document.save(outputStream);
         document.close();
 
-        return out.toByteArray();
+        return outputStream.toByteArray();
     }
 }

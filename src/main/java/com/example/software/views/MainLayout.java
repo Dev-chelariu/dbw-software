@@ -63,9 +63,17 @@ public class MainLayout extends AppLayout {
     }
 
     private void addDrawerContent() {
-        H1 appName = new H1("DBW Software");
+        H1 appName = new H1();
         appName.addClassNames(LumoUtility.FontSize.LARGE, LumoUtility.Margin.NONE);
+
         Header header = new Header(appName);
+        // Create the logo image object
+        Image logoImage = new Image("images/logo.png", "DBW Software Logo");
+        logoImage.setAlt("DBW Software Logo");
+        logoImage.setHeight("200px");
+        logoImage.setWidth("200px");
+
+        header.add(logoImage);
 
         Button toggleButton = new Button("Dark Theme", click -> {
             ThemeList themeList = UI.getCurrent().getElement().getThemeList();
