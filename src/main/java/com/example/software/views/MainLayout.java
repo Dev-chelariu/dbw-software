@@ -7,6 +7,7 @@ import com.example.software.security.AuthenticatedUser;
 import com.example.software.views.dashboard.DashboardView;
 import com.example.software.views.email.EmailView;
 import com.example.software.views.employee.EmployeesView;
+import com.example.software.views.invoice.InvoiceListView;
 import com.example.software.views.invoice.InvoiceView;
 import com.example.software.views.map.MapView;
 import com.example.software.views.product.ProductsView;
@@ -114,6 +115,9 @@ public class MainLayout extends AppLayout {
         }
         if (accessChecker.hasAccess(InvoiceView.class)) {
             nav.addItem(new AppNavItem("Invoice", InvoiceView.class, "lab la-dochub"));
+        }
+        if (accessChecker.hasAccess(InvoiceListView.class)) {
+            nav.addItem(new AppNavItem("List Invoices", InvoiceListView.class, "lab la-dochub"));
         }
         if (accessChecker.hasAccess(MapView.class)) {
             nav.addItem(new AppNavItem("Location", MapView.class, "la la-map"));

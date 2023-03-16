@@ -35,6 +35,7 @@ public class InvoiceService implements IInvoice {
 
     @Override
     public List<Invoice> findAll() {
+        Invoice _invoice = new Invoice();
         return invoiceRepository.findAll();
     }
 
@@ -68,6 +69,7 @@ public class InvoiceService implements IInvoice {
         //save aditional fields from invoice
         invoice.setName(invoice.getName());
         invoice.setInvoiceDate(invoice.getInvoiceDate());
+        invoice.setTotal(invoice.getTotal());
 
         try {
             invoice = invoiceRepository.save(invoice);

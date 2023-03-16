@@ -3,7 +3,10 @@ package com.example.software.data.entity;
 import com.example.software.data.entity.enums.Availability;
 import com.example.software.data.entity.enums.UM;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import lombok.*;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import javax.persistence.*;
 import javax.validation.constraints.Min;
@@ -16,7 +19,6 @@ import java.util.Set;
 @Getter
 @Setter
 @NoArgsConstructor
-@ToString
 @Entity
 @Table(name="dbw_product")
 public class Product implements Serializable {
