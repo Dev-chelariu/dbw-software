@@ -1,5 +1,7 @@
 package com.example.software.views.invoice;
 
+import com.example.software.data.entity.Customer;
+import com.example.software.data.entity.Employee;
 import com.example.software.data.entity.Invoice;
 import com.example.software.data.entity.InvoiceDetails;
 import com.vaadin.flow.component.datepicker.DatePicker;
@@ -78,7 +80,24 @@ public class InvoiceDetailsForm  extends FormLayout{
         employee.setValue(invoice.getEmployee().getFirstName());
     }
 
+    public Invoice getInvoice(Invoice invoice) {
 
+        Invoice _invoice = new Invoice();
+        _invoice.setName(name.getValue());
+        _invoice.setInvoiceDate(invoiceDate.getValue());
+        _invoice.setTotal(total.getValue());
 
+        Customer customer = new Customer();
+        customer.setFirstName(firstName.getValue());
+        customer.setLastName(lastName.getValue());
+        customer.setPhone(phone.getValue());
+
+        Employee employee1 = new Employee();
+        employee1.setFirstName(firstName.getValue());
+
+        InvoiceDetails invoiceDetails = new InvoiceDetails();
+       // invoiceDetails.setInvoiceId();
+        return invoice;
+    }
 }
 

@@ -29,6 +29,11 @@ public class InvoiceService implements IInvoice {
     private final InvoiceDetailRepository invoiceDetailsRepository;
 
     @Override
+    public Invoice getInvoiceById(Long id) {
+        return invoiceRepository.findById(id).orElse(null);
+    }
+
+    @Override
     public int count() {
        return (int) invoiceRepository.count();
     }

@@ -5,13 +5,18 @@ import com.example.software.data.service.implementation.InvoiceService;
 import com.example.software.views.MainLayout;
 import com.example.software.views.invoice.ExportUtils.PdfUtils;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
+import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.textfield.EmailField;
+import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.provider.ListDataProvider;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
@@ -20,9 +25,12 @@ import com.vaadin.flow.data.renderer.Renderer;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouteAlias;
+import com.vaadin.flow.server.StreamResource;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.annotation.security.PermitAll;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -34,7 +42,7 @@ public class InvoiceListView extends VerticalLayout {
 
     private final InvoiceService invoiceService;
 
-    private PdfUtils pdfUtils;
+    private PdfUtils pdfUtils = new PdfUtils();
 
     public InvoiceListView(InvoiceService invoiceService) {
         this.invoiceService = invoiceService;
@@ -65,21 +73,19 @@ public class InvoiceListView extends VerticalLayout {
         HorizontalLayout filterLayout = new HorizontalLayout(invoiceNameFilter, invoiceDateFilter);
         filterLayout.setSpacing(true);
 
-        addClassNames("invoice-list-view");
         grid.addColumn(Invoice::getName).setHeader("Invoice Name");
         grid.addColumn(Invoice::getInvoiceDate).setHeader("Invoice Date");
         grid.addColumn(Invoice::getTotal).setHeader("Invoice Total");
         grid.addColumn(createToggleDetailsRenderer(grid)).setHeader("Details");
 
         grid.addComponentColumn(invoice -> {
-            Button button = new Button(new Icon(VaadinIcon.DOWNLOAD_ALT));
-            // Generate the PDF and store it in a byte array
-            byte[] pdfBytes;
-            //    pdfBytes = pdfUtils.createPdf();
-            // Create a StreamResource containing the PDF data
-          //  StreamResource resource = new StreamResource("invoice.pdf", () -> new ByteArrayInputStream(pdfBytes));
+            Button button = new Button(new Icon(VaadinIcon.DOWNLOAD));
+            button.addClickListener(event ->
+
+                    downloadPdf(invoice));
             return button;
-        }).setHeader("Export PDF");
+        }).setHeader("Download PDF");
+
 
         grid.setDetailsVisibleOnClick(false);
         grid.setItemDetailsRenderer(createPersonDetailsRenderer());
@@ -104,5 +110,30 @@ public class InvoiceListView extends VerticalLayout {
     private static ComponentRenderer<InvoiceDetailsForm, Invoice> createPersonDetailsRenderer() {
         return new ComponentRenderer<>(InvoiceDetailsForm::new,
                 InvoiceDetailsForm::setInvoice);
+    }
+
+    private void downloadPdf(Invoice invoice) {
+        // Get the invoice from the database
+        Invoice dbInvoice = invoiceService.getInvoiceById(invoice.getInvoiceId());
+
+        // Generate the PDF and store it in a byte array
+        try {
+            byte[] pdfBytes = pdfUtils.createPdf(dbInvoice);
+
+            // Create a stream resource from the PDF bytes
+            StreamResource resource = new StreamResource("invoice.pdf", () ->
+                    new ByteArrayInputStream(pdfBytes));
+
+            // Add the download link to the UI
+            Anchor downloadLink = new Anchor(resource, "Your Invoice is Here  ");
+            downloadLink.getElement().setAttribute("download", true);
+
+            downloadLink.add(new Icon(VaadinIcon.DOWNLOAD_ALT));
+            Notification.show("Your invoice is ready in the footer of the page!");
+            add(downloadLink);
+
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

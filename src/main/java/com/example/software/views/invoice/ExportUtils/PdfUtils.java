@@ -1,6 +1,7 @@
 package com.example.software.views.invoice.ExportUtils;
 
 import com.example.software.data.entity.Employee;
+import com.example.software.data.entity.Invoice;
 import com.example.software.data.entity.InvoiceDetails;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.datepicker.DatePicker;
@@ -20,9 +21,7 @@ import java.util.List;
 
 public class PdfUtils {
 
-    public byte[] createPdf(TextField invoiceName, TextField cFirstName, TextField cLastName,
-                            DatePicker date, TextField cPhone, EmailField emailCustomer,
-                            TextArea textArea, ComboBox<Employee> employee,List<InvoiceDetails> detailsList) throws IOException {
+    public byte[] createPdf(Invoice invoice) throws IOException {
 
         PDDocument document = new PDDocument();
         PDPage page = new PDPage(PDRectangle.A4);
@@ -38,46 +37,46 @@ public class PdfUtils {
         // Add content to the PDF document
         contentStream.beginText();
         contentStream.newLineAtOffset(275, 750);
-        contentStream.showText(invoiceName.getValue());
+        contentStream.showText(invoice.getName());
         contentStream.endText();
 
         // Add content to the PDF document
         contentStream.beginText();
         contentStream.newLineAtOffset(50, 700);
-        contentStream.showText("Date: " + date.getValue());
+        contentStream.showText("Date: " + invoice.getInvoiceDate());
         contentStream.endText();
 
         contentStream.beginText();
         contentStream.newLineAtOffset(50, 675);
-        contentStream.showText("First Name: " + cFirstName.getValue());
+        contentStream.showText("First Name: " + invoice.getCustomer().getFirstName());
         contentStream.endText();
 
         contentStream.beginText();
         contentStream.newLineAtOffset(50, 650);
-        contentStream.showText("Last Name: " + cLastName.getValue());
+        contentStream.showText("Last Name: " + invoice.getCustomer().getLastName());
         contentStream.endText();
 
         // Write the customer email
         contentStream.beginText();
         contentStream.newLineAtOffset(50, 625);
-        contentStream.showText("Email: " + emailCustomer.getValue());
+        contentStream.showText("Email: " + invoice.getCustomer().getEmail());
         contentStream.endText();
 
         // Write the customer phone
         contentStream.beginText();
         contentStream.newLineAtOffset(50, 600);
-        contentStream.showText("Phone: " + cPhone.getValue());
+        contentStream.showText("Phone: " + invoice.getCustomer().getPhone());
         contentStream.endText();
 
         // Write the invoice details
         contentStream.beginText();
         contentStream.newLineAtOffset(50, 575);
-        contentStream.showText("Details: " + textArea.getValue());
+        contentStream.showText("Details: " + invoice.getCustomer().getDetails());
         contentStream.endText();
 
         contentStream.beginText();
         contentStream.newLineAtOffset(50, 550);
-        Employee selectedEmployee = employee.getValue();
+        Employee selectedEmployee = invoice.getEmployee();
         String employeeName = selectedEmployee.getFirstName();
         contentStream.showText("Employee: " + employeeName);
         contentStream.endText();
@@ -121,7 +120,7 @@ public class PdfUtils {
         }
         // draw table content
 
-        for (InvoiceDetails product : detailsList) {
+        for (InvoiceDetails product : invoice.getInvoiceDetails()) {
             currentY -= rowHeight;
             currentX = margin;
             contentStream.beginText();

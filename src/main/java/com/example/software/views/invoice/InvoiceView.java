@@ -293,28 +293,28 @@ public class InvoiceView extends Div {
         detailsLine.add(totalText);
         detailsLine.setClassName("controls-line footer");
 
-        exportPdfButton.addClickListener(eventPdf -> {
-            // Generate the PDF and store it in a byte array
-            byte[] pdfBytes;
-            try {
-                pdfBytes = pdfUtils.createPdf(name, firstName, lastName, invoiceDate, phone, email, details, employee, detailsList);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-            // Create a StreamResource containing the PDF data
-            StreamResource resource = new StreamResource("invoice.pdf", () -> new ByteArrayInputStream(pdfBytes));
-
-            // Create an Anchor component to trigger the download
-            Anchor downloadLink = new Anchor(resource, "Download PDF");
-
-            // Set the download attribute to trigger a download when clicked
-            downloadLink.getElement().setAttribute("download", true);
-            Notification.show("Check in the footer of the page and press download!"
-                    , 3000, Notification.Position.MIDDLE);
-
-            // Add the download link to the view
-            add(downloadLink);
-        });
+//        exportPdfButton.addClickListener(eventPdf -> {
+//            // Generate the PDF and store it in a byte array
+//            byte[] pdfBytes;
+//            try {
+//                pdfBytes = pdfUtils.createPdf(name, firstName, lastName, invoiceDate, phone, email, details, employee, detailsList);
+//            } catch (IOException e) {
+//                throw new RuntimeException(e);
+//            }
+//            // Create a StreamResource containing the PDF data
+//            StreamResource resource = new StreamResource("invoice.pdf", () -> new ByteArrayInputStream(pdfBytes));
+//
+//            // Create an Anchor component to trigger the download
+//            Anchor downloadLink = new Anchor(resource, "Download PDF");
+//
+//            // Set the download attribute to trigger a download when clicked
+//            downloadLink.getElement().setAttribute("download", true);
+//            Notification.show("Check in the footer of the page and press download!"
+//                    , 3000, Notification.Position.MIDDLE);
+//
+//            // Add the download link to the view
+//            add(downloadLink);
+//        });
             add(controlsLine, board, addsLine,selectedProductsGrid, detailsLine);
         }
 
