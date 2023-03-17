@@ -1,11 +1,14 @@
 package com.example.software.views.dashboard;
 
 
+import com.example.software.data.entity.Customer;
+import com.example.software.data.entity.ServiceHealth;
+import com.example.software.data.entity.enums.Status;
+import com.example.software.data.service.implementation.CustomerService;
 import com.example.software.data.service.implementation.InvoiceService;
 import com.example.software.data.service.implementation.ProductService;
 import com.example.software.data.service.implementation.UserService;
 import com.example.software.views.MainLayout;
-import com.example.software.views.dashboard.ServiceHealth.Status;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.board.Board;
 import com.vaadin.flow.component.charts.Chart;
@@ -29,6 +32,8 @@ import com.vaadin.flow.router.RouteAlias;
 import com.vaadin.flow.theme.lumo.LumoUtility.*;
 
 import javax.annotation.security.RolesAllowed;
+import java.math.BigDecimal;
+import java.util.List;
 
 @PageTitle("Dashboard")
 @Route(value = "dashboard", layout = MainLayout.class)
@@ -40,24 +45,30 @@ public class DashboardView extends Main {
     private final ProductService productService;
     private final InvoiceService invoiceService;
 
-    public DashboardView(UserService userService, ProductService productService, InvoiceService invoiceService) {
+    private ServiceHealth serviceHealth = new ServiceHealth();
+
+    private final CustomerService customerService;
+
+    public DashboardView(UserService userService, ProductService productService, InvoiceService invoiceService, CustomerService customerService) {
         this.userService = userService;
         this.productService = productService;
         this.invoiceService = invoiceService;
+        this.customerService = customerService;
 
         addClassName("dashboard-view");
 
          String value = String.valueOf(userService.count());
          String sProductsCount = String.valueOf(productService.count());
          String sInvoiceCount = String.valueOf(invoiceService.count());
+         BigDecimal totalSale = invoiceService.getTotalSale();
 
         Board board = new Board();
         board.addRow(
                // createUserRow(),
-                createHighlight("Current users", value.toString(), 12.2),
+                createHighlight("Current users", value, 12.2),
                 createHighlight("Products", sProductsCount, 112.45),
                 createHighlight("Invoices", sInvoiceCount, 33.9),
-                createHighlight("Total sale", "1234353.45", 1.0));
+                createHighlight("Total sale in lei", totalSale.toString(), 1.0));
         board.addRow(createViewEvents());
         board.addRow(createServiceHealth(), createResponseTimes());
         add(board);
@@ -155,14 +166,20 @@ public class DashboardView extends Main {
             status.getElement().getThemeList().add(getStatusTheme(serviceHealth));
             return status;
         })).setHeader("").setFlexGrow(0).setAutoWidth(true);
-        grid.addColumn(ServiceHealth::getCity).setHeader("City").setFlexGrow(1);
+        grid.addColumn(ServiceHealth::getService).setHeader("Services").setFlexGrow(1);
         grid.addColumn(ServiceHealth::getInput).setHeader("Input").setAutoWidth(true).setTextAlign(ColumnTextAlign.END);
         grid.addColumn(ServiceHealth::getOutput).setHeader("Output").setAutoWidth(true)
                 .setTextAlign(ColumnTextAlign.END);
 
-        grid.setItems(new ServiceHealth(Status.EXCELLENT, "Münster", 324, 1540),
-                new ServiceHealth(Status.OK, "Cluj-Napoca", 311, 1320),
-                new ServiceHealth(Status.FAILING, "Ciudad Victoria", 300, 1219));
+        grid.setItems(new ServiceHealth(Status.EXCELLENT, "Invoices", 324, 1540),
+                new ServiceHealth(Status.OK, "Email", 453, 1350),
+                new ServiceHealth(Status.OK, "User", 31, 10),
+                new ServiceHealth(Status.OK, "Employee", 31, 10),
+                new ServiceHealth(Status.OK, "Product", 3117, 130),
+                new ServiceHealth(Status.OK, "Spreadsheet", 11, 10),
+                new ServiceHealth(Status.EXCELLENT, "List Invoices", 30, 19),
+                new ServiceHealth(Status.FAILING, "No service falling", 0, 0));
+
 
         // Add it all together
         VerticalLayout serviceHealth = new VerticalLayout(header, grid);
@@ -174,28 +191,24 @@ public class DashboardView extends Main {
     }
 //Charts
     private Component createResponseTimes() {
-        HorizontalLayout header = createHeader("Response times", "Average across all systems");
+        HorizontalLayout header = createHeader("Top Customers", "Displays loyal customers");
 
         // Chart
         Chart chart = new Chart(ChartType.PIE);
         Configuration conf = chart.getConfiguration();
+        conf.setTitle("Customers with the Most Invoices");
+        conf.getLegend().setEnabled(false);
         conf.getChart().setStyledMode(true);
         chart.setThemeName("gradient");
+        // Get the top 10 customers with the most invoices
+        List<Customer> topCustomers = customerService.getCustomersByInvoiceCount(5);
 
         DataSeries series = new DataSeries();
-//        invoiceService.findAll().forEach(invoice ->
-//                series.add(new DataSeriesItem(invoice.getName(), invoice.getCustomerCount())));
-       // chart.getConfiguration().setSeries(series); OLD APPROACH
-        conf.addSeries(series);
 
-        //Basically I want to display clientii cu cele mai multe comenzi
-        series.add(new DataSeriesItem("System 1", 12.5));
-        series.add(new DataSeriesItem("System 2", 12.5));
-        series.add(new DataSeriesItem("System 3", 12.5));
-        series.add(new DataSeriesItem("System 4", 12.5));
-        series.add(new DataSeriesItem("System 5", 12.5));
-        series.add(new DataSeriesItem("System 6", 12.5));
-
+        for (Customer customer : topCustomers) {
+            series.add(new DataSeriesItem(customer.getFirstName(), customer.getInvoiceCount()));
+        }
+        conf.setSeries(series);
 
         // Add it all together
         VerticalLayout serviceHealth = new VerticalLayout(header, chart);

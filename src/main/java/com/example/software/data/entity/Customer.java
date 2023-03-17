@@ -27,7 +27,7 @@ public class Customer extends Person {
     @OneToMany(fetch = FetchType.EAGER, mappedBy = "customer")
     private List<Invoice> invoices = new LinkedList<>();
 
-    public Customer(Long id) {
-        super(id);
+    public int getInvoiceCount() {
+        return invoices.size();
     }
 }

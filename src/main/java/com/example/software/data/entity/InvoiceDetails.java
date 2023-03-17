@@ -33,4 +33,8 @@ public class InvoiceDetails {
     @JoinColumn(name = "invoice_id", referencedColumnName = "invoice_id",
             insertable = false, updatable = false)
     private Invoice invoice;
+
+    public void setInvoice(Invoice invoice) {
+        this.invoice = invoice;
+    }
 }

@@ -18,9 +18,7 @@ public interface IPerson<T, ID> {
 
     void save(T object);
 
-    Customer saveCus(Customer customer);
-
-    Employee saveEmplo(Employee employee);
+    Customer saveNoDtoCustomer(Customer customer);
 
     void delete(T object);
 

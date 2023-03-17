@@ -5,10 +5,8 @@ import com.example.software.data.service.implementation.EmployeeService;
 import com.example.software.data.service.implementation.InvoiceService;
 import com.example.software.data.service.implementation.ProductService;
 import com.example.software.views.MainLayout;
-import com.example.software.views.invoice.ExportUtils.PdfUtils;
 import com.vaadin.flow.component.board.Board;
 import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.datepicker.DatePicker;
@@ -17,8 +15,8 @@ import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.grid.ColumnTextAlign;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
-import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.H5;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
@@ -32,17 +30,17 @@ import com.vaadin.flow.data.binder.BeanValidationBinder;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.binder.ValidationException;
 import com.vaadin.flow.data.provider.ListDataProvider;
+import com.vaadin.flow.data.validator.EmailValidator;
+import com.vaadin.flow.data.validator.RegexpValidator;
+import com.vaadin.flow.data.validator.StringLengthValidator;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouteAlias;
-import com.vaadin.flow.server.StreamResource;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.annotation.security.PermitAll;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.Serializable;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -69,8 +67,8 @@ public class InvoiceView extends Div {
     IntegerField quantity = new IntegerField();
 
     Customer customer = new Customer();
-    PdfUtils pdfUtils = new PdfUtils();
-    Span totalText = new Span();
+
+    IntegerField totalText = new IntegerField();
     Span status;
     Button saveBtn = new Button("Save invoice", VaadinIcon.CHECK.create());
 
@@ -82,15 +80,37 @@ public class InvoiceView extends Div {
         selectedProductsGrid.setDataProvider(dataProvider);
 
         Binder<Invoice> cBinder = new BeanValidationBinder<>(Invoice.class);
-        cBinder.bind(name, Invoice::getName, Invoice::setName);
+        cBinder.forField(name)
+                .withValidator(new StringLengthValidator("Name must be between 2 and 50 characters", 2, 50))
+                .bind(Invoice::getName, Invoice::setName);
+
         cBinder.bind(invoiceDate, Invoice::getInvoiceDate, Invoice::setInvoiceDate);
+        cBinder.bind(totalText, Invoice::getTotal, Invoice::setTotal);
 
         Binder<Customer> custBinder = new BeanValidationBinder<>(Customer.class);
-        custBinder.bind(firstName, Customer::getFirstName, Customer::setFirstName);
-        custBinder.bind(lastName, Customer::getLastName, Customer::setLastName);
-        custBinder.bind(email, Customer::getEmail, Customer::setEmail);
-        custBinder.bind(phone,  Customer::getPhone, Customer::setPhone);
-        custBinder.bind(details,  Customer::getDetails, Customer::setDetails);
+
+        custBinder.forField(firstName)
+                .asRequired("First name is required")
+                .withValidator(new RegexpValidator("First name contains invalid characters", "^[\\p{L} .'-]+$"))
+                .bind(Person::getFirstName, Person::setFirstName);
+        custBinder.forField(lastName)
+                .asRequired("Last name is required")
+                .withValidator(new RegexpValidator("Last name contains invalid characters", "^[\\p{L} .'-]+$"))
+                .bind(Person::getLastName, Person::setLastName);
+
+        custBinder.forField(email)
+                .asRequired("Email is required")
+                .withValidator(new EmailValidator("Invalid email address"))
+                .bind(Customer::getEmail, Customer::setEmail);
+
+        custBinder.forField(phone)
+                .asRequired("Phone is required")
+                .bind(Customer::getPhone, Customer::setPhone);
+
+        custBinder.forField(details)
+                .asRequired("Details are important about our customers!")
+                .withValidator(details -> details.length() <= 200, "Details must be 200 characters or less")
+                .bind(Customer::getDetails, Customer::setDetails);
 
         dataProvider.getItems().addAll(detailsList);
 
@@ -113,18 +133,15 @@ public class InvoiceView extends Div {
         buttonsWrapper.addClassName("controls-line-buttons");
 
         ConfirmDialog dialog = new ConfirmDialog();
-        //SAVE button
+
         status = new Span();
         status.setVisible(false);
-        dialog.setHeader("Unsaved changes");
+        dialog.setHeader("Invoice saved!");
         dialog.setText(
-                "Do you want to save your changes?");
+                "Check section list of invoice to export or preview your invoice");
 
         dialog.setCancelable(true);
-        dialog.addCancelListener(event -> setStatus("Canceled"));
-
-        dialog.setConfirmText("Save");
-        dialog.addConfirmListener(event -> setStatus("Saved"));
+        dialog.addCancelListener(event -> setStatus("OK"));
 
         saveBtn.setThemeName("primary");
         saveBtn.addClickListener(event -> {
@@ -153,7 +170,7 @@ public class InvoiceView extends Div {
         ConfirmDialog dialog1 = new ConfirmDialog();
         dialog1.setHeader("Changes deleted!");
         dialog1.setText(
-                "Your changes has been deleted.");
+                "Your form is clean now.");
 
         Button discardBtn = new Button("Discard changes");
         discardBtn.setThemeName("error tertiary");
@@ -177,10 +194,6 @@ public class InvoiceView extends Div {
 
         dialog1.setConfirmText("Ok");
         dialog1.addConfirmListener(event -> setStatus("Empty!"));
-
-        Button exportPdfButton = new Button("Export as PDF");
-        exportPdfButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY,
-                ButtonVariant.LUMO_SUCCESS);
 
         buttonsWrapper.add(discardBtn, saveBtn, status);
         controlsLine.add(detailsWrapper, buttonsWrapper);
@@ -208,14 +221,45 @@ public class InvoiceView extends Div {
         employee.setPlaceholder("Select an employee");
 
         // Set the Date for the DatePicker
-        invoiceDate.setLabel("Date");
+        invoiceDate.setLabel("Invoice Date");
+        invoiceDate.addValueChangeListener(event -> {
+            LocalDate selectedDate = event.getValue();
+            if (selectedDate != null && selectedDate.isAfter(LocalDate.now())) {
+                Notification.show("The selected date cannot be in the future.");
+                event.getSource().clear();
+            }
+        });
 
         // Inputs
         firstName.getElement().setAttribute("colspan", "2");
         firstName.setClassName("large");
+        // Set up validation for first name field
+        firstName.setRequired(true);
+        firstName.setMaxLength(50);
+        firstName.addValueChangeListener(event -> {
+            if (firstName.getValue().matches(".*\\d.*")) {
+                firstName.setInvalid(true);
+                firstName.setErrorMessage("First name cannot contain numbers");
+            } else {
+                firstName.setInvalid(false);
+            }
+        });
+
+
         // Inputs
         lastName.getElement().setAttribute("colspan", "2");
         lastName.setClassName("large");
+        // Set up validation for last name field
+        lastName.setRequired(true);
+        lastName.setMaxLength(50);
+        lastName.addValueChangeListener(event -> {
+            if (lastName.getValue().matches(".*\\d.*")) {
+                lastName.setInvalid(true);
+                lastName.setErrorMessage("Last name cannot contain numbers");
+            } else {
+                lastName.setInvalid(false);
+            }
+        });
 
         // Inputs
         email.getElement().setAttribute("colspan", "2");
@@ -230,7 +274,7 @@ public class InvoiceView extends Div {
 
         //Text Area
         int charLimit = 140;
-        details.setLabel("Details invoice");
+        details.setLabel("Customer details");
         details.setMaxLength(charLimit);
         details.setValueChangeMode(ValueChangeMode.EAGER);
         details.addValueChangeListener(e -> {
@@ -259,7 +303,7 @@ public class InvoiceView extends Div {
         Button addProductToInvoiceBtn = new Button(cardTransactionText);
         addProductToInvoiceBtn.setThemeName("tertiary");
         addProductToInvoiceBtn.setId("add-transaction");
-        btnWrapper.add(addProductToInvoiceBtn, exportPdfButton);
+        btnWrapper.add(addProductToInvoiceBtn);
         addsLine.add(btnWrapper);
 
         selectedProductsGrid.setHeight("700px");
@@ -290,32 +334,14 @@ public class InvoiceView extends Div {
 
         detailsLine.setHeight("40px");
 
-        detailsLine.add(totalText);
+        H5 totalString = new H5("Total invoice: ");
+        // Set the style of the totalString component to add some margin-right
+        totalString.getStyle().set("margin-right", "10px");
+
+        detailsLine.add(totalString, totalText);
         detailsLine.setClassName("controls-line footer");
 
-//        exportPdfButton.addClickListener(eventPdf -> {
-//            // Generate the PDF and store it in a byte array
-//            byte[] pdfBytes;
-//            try {
-//                pdfBytes = pdfUtils.createPdf(name, firstName, lastName, invoiceDate, phone, email, details, employee, detailsList);
-//            } catch (IOException e) {
-//                throw new RuntimeException(e);
-//            }
-//            // Create a StreamResource containing the PDF data
-//            StreamResource resource = new StreamResource("invoice.pdf", () -> new ByteArrayInputStream(pdfBytes));
-//
-//            // Create an Anchor component to trigger the download
-//            Anchor downloadLink = new Anchor(resource, "Download PDF");
-//
-//            // Set the download attribute to trigger a download when clicked
-//            downloadLink.getElement().setAttribute("download", true);
-//            Notification.show("Check in the footer of the page and press download!"
-//                    , 3000, Notification.Position.MIDDLE);
-//
-//            // Add the download link to the view
-//            add(downloadLink);
-//        });
-            add(controlsLine, board, addsLine,selectedProductsGrid, detailsLine);
+            add(controlsLine, board, addsLine, selectedProductsGrid, detailsLine);
         }
 
         private Button createRemoveButton (Grid <InvoiceDetails> grid, InvoiceDetails item){
@@ -393,16 +419,18 @@ public class InvoiceView extends Div {
           invoiceService.saveInvoiceDetails(currentInvoice, detailsList);
     }
 
-    private void updateTotal(Grid<InvoiceDetails> grid, Span totalText) {
 
+    private void updateTotal(Grid<InvoiceDetails> grid, IntegerField totalText) {
         // Calculate and set the initial total
         int newTotal = detailsList.stream().mapToInt(InvoiceDetails::getTotal).sum();
-        totalText.setText(" Total: " + newTotal + " lei");
+        totalText.setValue(newTotal);
+        totalText.setReadOnly(true);
 
         // Update the total whenever the quantity of a product changes
         grid.getDataProvider().addDataProviderListener(event -> {
             int updatedTotal = detailsList.stream().mapToInt(InvoiceDetails::getTotal).sum();
-            totalText.setText(" Total: " + updatedTotal + " lei");
+            totalText.setValue(updatedTotal);
         });
+
     }
 }

@@ -4,29 +4,34 @@ import com.example.software.data.entity.Customer;
 import com.example.software.data.entity.Employee;
 import com.example.software.data.entity.Invoice;
 import com.example.software.data.entity.InvoiceDetails;
-import com.example.software.data.repository.CustomerRepository;
 import com.example.software.data.repository.EmployeeRepository;
 import com.example.software.data.repository.InvoiceDetailRepository;
 import com.example.software.data.repository.InvoiceRepository;
 import com.example.software.data.service.IInvoice;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 
 @Service
-@RequiredArgsConstructor
 @Slf4j
 public class InvoiceService implements IInvoice {
 
     private final InvoiceRepository invoiceRepository;
     private final EmployeeRepository employeeRepository;
-    private final CustomerRepository customerRepository;
+    private final CustomerService customerService;
     private final InvoiceDetailRepository invoiceDetailsRepository;
+
+    public InvoiceService(InvoiceRepository invoiceRepository, EmployeeRepository employeeRepository, CustomerService customerService, InvoiceDetailRepository invoiceDetailsRepository) {
+        this.invoiceRepository = invoiceRepository;
+        this.employeeRepository = employeeRepository;
+        this.customerService = customerService;
+        this.invoiceDetailsRepository = invoiceDetailsRepository;
+    }
 
     @Override
     public Invoice getInvoiceById(Long id) {
@@ -40,26 +45,12 @@ public class InvoiceService implements IInvoice {
 
     @Override
     public List<Invoice> findAll() {
-        Invoice _invoice = new Invoice();
         return invoiceRepository.findAll();
     }
 
-     @Transactional
+    @Transactional @Override
     public Invoice saveInvoice(Invoice invoice, Customer customer) {
 
-        invoice.setCustomer(customer);
-        if (customer.getId() == null) {
-            try {
-                customer.setFirstName(invoice.getCustomer().getFirstName());
-                 customer.setLastName(invoice.getCustomer().getLastName());
-                 customer.setPhone(invoice.getCustomer().getPhone());
-                 customer.setEmail(invoice.getCustomer().getEmail());
-                customer.setDetails(invoice.getCustomer().getDetails());
-                 customerRepository.save(customer);
-            } catch (Throwable e) {
-                log.error("Customer not saved!", e.getMessage());
-            }
-        }
         // Get the selected employee from the ComboBox
         Employee selectedEmployee = invoice.getEmployee();
 
@@ -71,21 +62,23 @@ public class InvoiceService implements IInvoice {
         } else {
             throw new NoSuchElementException("Employee with id " + selectedEmployee.getId() + " not found");
         }
-        //save aditional fields from invoice
-        invoice.setName(invoice.getName());
-        invoice.setInvoiceDate(invoice.getInvoiceDate());
-        invoice.setTotal(invoice.getTotal());
 
-        try {
-            invoice = invoiceRepository.save(invoice);
+         try {
+             Customer savedCustomer = customerService.saveNoDtoCustomer(customer);
 
-        } catch (Throwable e) {
-            log.error("Invoice or invoice details not saved!", e.getMessage());
-        }
+             invoice.setCustomer(savedCustomer);
+             invoice.setName(invoice.getName());
+             invoice.setInvoiceDate(invoice.getInvoiceDate());
+             invoice.setTotal(invoice.getTotal());
+              invoiceRepository.save(invoice);
+
+            } catch (Throwable e) {
+                log.error("Invoice or Customer not saved!", e.getMessage());
+            }
         return invoice;
     }
 
-    @Transactional
+    @Transactional @Override
     public void saveInvoiceDetails(Invoice invoice, List<InvoiceDetails> detailsList) {
 
         // Set the invoice ID for each detail object
@@ -98,7 +91,15 @@ public class InvoiceService implements IInvoice {
             log.error("Error saving invoice details: ", e);
             throw new RuntimeException("Failed to save invoice details.", e);
         }
-}   }
+}
+
+    @Override
+    public BigDecimal getTotalSale() {
+
+        BigDecimal totalSale = invoiceRepository.getTotalSale();
+        return totalSale;
+    }
+}
 
 
 

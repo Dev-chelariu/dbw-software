@@ -35,15 +35,7 @@ public class MapView extends HorizontalLayout {
 
     private static LocationDTO[] locationDTOS = new LocationDTO[]{
             new LocationDTO(1, "Romania", "Iasi", "DBW - WAREHOUSE", 47.18217365544058, 27.474595343290996),
-            new LocationDTO(2, "Andorra", "Andorra la Vella", "Casa de la Vall", 42.506563, 1.520563),
-            new LocationDTO(3, "Greece", "Athens", "Acropolis of Athens", 37.971563, 23.725687),
-            new LocationDTO(4, "Serbia", "Belgrade", "Belgrade Fortress", 44.823062, 20.450688),
-            new LocationDTO(5, "Germany", "Berlin", "Brandenburg Gate", 52.516312, 13.377688),
-            new LocationDTO(6, "Switzerland", "Bern", "Bern Old Town", 46.948187, 7.450188),
-            new LocationDTO(7, "Slovakia", "Bratislava", "Bratislava Castle", 48.142063, 17.100187),
-            new LocationDTO(8, "Belgium", "Brussels", "Grand Place", 50.846812, 4.352438),
-            new LocationDTO(9, "Romania", "Bucharest", "Romanian Athenaeum", 44.441312, 26.097313),
-            new LocationDTO(10, "Hungary", "Budapest", "Fisherman's Bastion", 47.502187, 19.034813)};
+            new LocationDTO(9, "Romania", "Bucharest", "Romanian Athenaeum", 44.441312, 26.097313)};
 
     private Map map = new Map();
 

@@ -23,7 +23,6 @@ public class EmployeeService implements IPerson<EmployeeDTO, Long> {
     private final EmployeeMapper employeeMapper;
 
 
-
     public EmployeeDTO findById(Long id) throws NoSuchElementException {
         return employeeRepository
                 .findById(id)
@@ -41,17 +40,12 @@ public class EmployeeService implements IPerson<EmployeeDTO, Long> {
     }
 
     @Override
-    public Customer saveCus(Customer customer) {
+    public Customer saveNoDtoCustomer(Customer customer) {
         return null;
-    }
-    @Override
-    public Employee saveEmplo(Employee employee) {
-        return employeeRepository.save(employee);
     }
 
     public void delete(EmployeeDTO employeeDTO) {
         employeeRepository.delete(employeeMapper.toEmployee (employeeDTO));
-
     }
 
     @Override
