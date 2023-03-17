@@ -5,7 +5,6 @@ import com.example.software.data.service.implementation.InvoiceService;
 import com.example.software.views.MainLayout;
 import com.example.software.views.invoice.ExportUtils.PdfUtils;
 import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
@@ -15,8 +14,6 @@ import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
-import com.vaadin.flow.component.textfield.EmailField;
-import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.provider.ListDataProvider;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
@@ -121,7 +118,7 @@ public class InvoiceListView extends VerticalLayout {
             byte[] pdfBytes = pdfUtils.createPdf(dbInvoice);
 
             // Create a stream resource from the PDF bytes
-            StreamResource resource = new StreamResource("invoice.pdf", () ->
+            StreamResource resource = new StreamResource(invoice.getName() + "i.pdf", () ->
                     new ByteArrayInputStream(pdfBytes));
 
             // Add the download link to the UI

@@ -3,11 +3,6 @@ package com.example.software.views.invoice.ExportUtils;
 import com.example.software.data.entity.Employee;
 import com.example.software.data.entity.Invoice;
 import com.example.software.data.entity.InvoiceDetails;
-import com.vaadin.flow.component.combobox.ComboBox;
-import com.vaadin.flow.component.datepicker.DatePicker;
-import com.vaadin.flow.component.textfield.EmailField;
-import com.vaadin.flow.component.textfield.TextArea;
-import com.vaadin.flow.component.textfield.TextField;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
@@ -15,9 +10,9 @@ import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.apache.pdfbox.pdmodel.font.PDFont;
 import org.apache.pdfbox.pdmodel.font.PDType1Font;
 
+import java.awt.*;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.List;
 
 public class PdfUtils {
 
@@ -32,72 +27,98 @@ public class PdfUtils {
 
         // Set the font
         PDFont font = PDType1Font.HELVETICA;
-        contentStream.setFont(font, 12);
+        int fontSize = 12;
 
-        // Add content to the PDF document
+        contentStream.setFont(font, fontSize);
+
+        // Set the margins
+        float margin = 50;
+        float yStart = page.getMediaBox().getHeight() - margin;
+        float yStartTable = yStart - (2 * fontSize);
+        float tableWidth = page.getMediaBox().getWidth() - (2 * margin);
+
+        // Write the heading
+        String heading = "Invoice";
+        float headingWidth = font.getStringWidth(heading) / 1000 * fontSize;
         contentStream.beginText();
-        contentStream.newLineAtOffset(275, 750);
-        contentStream.showText(invoice.getName());
+        contentStream.setFont(PDType1Font.HELVETICA_BOLD, fontSize); // set font to bold
+        contentStream.newLineAtOffset((page.getMediaBox().getWidth() - headingWidth) / 2, yStart);
+        contentStream.showText(heading);
         contentStream.endText();
 
-        // Add content to the PDF document
+        // Write the customer information heading
+        String customerHeading = "Customer Information";
         contentStream.beginText();
-        contentStream.newLineAtOffset(50, 700);
-        contentStream.showText("Date: " + invoice.getInvoiceDate());
+        contentStream.setFont(PDType1Font.HELVETICA_BOLD, fontSize); // set font to bold
+        contentStream.newLineAtOffset(margin, yStart - (2 * fontSize));
+        contentStream.showText(customerHeading);
         contentStream.endText();
 
+        // Write the customer information
+        float currentY = yStart - (3 * fontSize);
         contentStream.beginText();
-        contentStream.newLineAtOffset(50, 675);
+        contentStream.setFont(PDType1Font.HELVETICA, fontSize);
+        contentStream.newLineAtOffset(margin, currentY - (2 * fontSize));
         contentStream.showText("First Name: " + invoice.getCustomer().getFirstName());
         contentStream.endText();
 
         contentStream.beginText();
-        contentStream.newLineAtOffset(50, 650);
+        contentStream.setFont(PDType1Font.HELVETICA, fontSize);
+        contentStream.newLineAtOffset(margin, currentY - (4 * fontSize));
         contentStream.showText("Last Name: " + invoice.getCustomer().getLastName());
         contentStream.endText();
 
-        // Write the customer email
         contentStream.beginText();
-        contentStream.newLineAtOffset(50, 625);
+        contentStream.setFont(PDType1Font.HELVETICA, fontSize);
+        contentStream.newLineAtOffset(margin, currentY - (6 * fontSize));
         contentStream.showText("Email: " + invoice.getCustomer().getEmail());
         contentStream.endText();
 
-        // Write the customer phone
         contentStream.beginText();
-        contentStream.newLineAtOffset(50, 600);
+        contentStream.setFont(PDType1Font.HELVETICA, fontSize);
+        contentStream.newLineAtOffset(margin, currentY - (8 * fontSize));
         contentStream.showText("Phone: " + invoice.getCustomer().getPhone());
         contentStream.endText();
 
-        // Write the invoice details
         contentStream.beginText();
-        contentStream.newLineAtOffset(50, 575);
-        contentStream.showText("Details: " + invoice.getCustomer().getDetails());
+        contentStream.setFont(PDType1Font.HELVETICA, fontSize);
+        contentStream.newLineAtOffset(margin, currentY - (10 * fontSize));
+        contentStream.showText("Customer details: " + invoice.getCustomer().getDetails());
         contentStream.endText();
 
+        // employee info
         contentStream.beginText();
-        contentStream.newLineAtOffset(50, 550);
+        contentStream.setFont(PDType1Font.HELVETICA, fontSize);
+        contentStream.newLineAtOffset(margin, currentY - (12 * fontSize));
         Employee selectedEmployee = invoice.getEmployee();
         String employeeName = selectedEmployee.getFirstName();
         contentStream.showText("Employee: " + employeeName);
         contentStream.endText();
 
-        // set table parameters  //table
-        float margin = 65;
-        float yStartNewPage = page.getMediaBox().getHeight() - (5 * margin);
-        float tableWidth = page.getMediaBox().getWidth() - (1 * margin);
+        contentStream.beginText();
+        contentStream.setFont(PDType1Font.HELVETICA, fontSize);
+        contentStream.newLineAtOffset(margin, currentY - (14 * fontSize));
+        contentStream.showText("Date: " + invoice.getInvoiceDate());
+        contentStream.endText();
+
+        float marginTable = 65;
+        float yStartNewPage = page.getMediaBox().getHeight() - (5 * marginTable);
+         tableWidth = page.getMediaBox().getWidth() - (2 * marginTable);
         float rowHeight = 20f;
         float tableTopY = yStartNewPage;
-        float tableBottomY = margin;
-        float[] columnWidths = {3f, 2f, 2f, 3f};
+        float tableBottomY = marginTable;
+        float[] columnWidths = {3f, 3f, 3f, 3f};
 
-        float currentY = tableTopY;
-        float currentX = margin;
+        float currentYTable = tableTopY;
+        float currentXTable = marginTable;
+
+        PDType1Font fontRegular = PDType1Font.HELVETICA;
 
         for (int i = 0; i < columnWidths.length; i++) {
             String header = "";
             switch (i) {
                 case 0:
-                    header = "Name";
+                    header = "Product";
                     break;
                 case 1:
                     header = "Price";
@@ -108,77 +129,73 @@ public class PdfUtils {
                 case 3:
                     header = "Total";
                     break;
-                case 4:
-                    header = "";
+                default:
                     break;
             }
+
+            contentStream.setNonStrokingColor(Color.WHITE);
+            contentStream.addRect(currentXTable, currentYTable, columnWidths[i] * (tableWidth / 14), rowHeight);
+            contentStream.fill();
+            contentStream.setNonStrokingColor(Color.BLACK);
             contentStream.beginText();
-            contentStream.newLineAtOffset(currentX, currentY);
+            contentStream.setFont(font, 12);
+            contentStream.newLineAtOffset(currentXTable + 5, currentYTable + 5);
             contentStream.showText(header);
             contentStream.endText();
-            currentX += columnWidths[i] * (tableWidth / 14);
+            currentXTable += columnWidths[i] * (tableWidth / 14);
         }
+
         // draw table content
-
         for (InvoiceDetails product : invoice.getInvoiceDetails()) {
-            currentY -= rowHeight;
-            currentX = margin;
+
+            currentYTable -= rowHeight;
+            currentXTable = margin;
+            contentStream.setNonStrokingColor(Color.LIGHT_GRAY);
+            contentStream.addRect(currentXTable, currentYTable, tableWidth, rowHeight);
+            contentStream.fill();
+            contentStream.setNonStrokingColor(Color.BLACK);
+
             contentStream.beginText();
-            contentStream.newLineAtOffset(currentX, currentY);
-          //  contentStream.showText(product.getProduct().getName());
+            contentStream.setFont(fontRegular, 12);
+            contentStream.newLineAtOffset(currentXTable + 25, currentYTable + 5);
+            contentStream.showText(product.getProduct().getName());
             contentStream.endText();
-            currentX += columnWidths[0] * (tableWidth / 14);
-
+            currentXTable +=1.5 * columnWidths[0] * (tableWidth / 14); // adjust the X position
 
             contentStream.beginText();
-            contentStream.newLineAtOffset(currentX, currentY);
-           // contentStream.showText((product.getProduct().getPrice()).toString());
+            contentStream.setFont(fontRegular, 12);
+            contentStream.newLineAtOffset(currentXTable - 20, currentYTable + 5);
+            contentStream.showText(product.getProduct().getPrice().toString());
             contentStream.endText();
-            currentX += columnWidths[1] * (tableWidth / 14);
+            currentXTable +=1.2 * columnWidths[1] * (tableWidth / 14); // adjust the X position
 
             contentStream.beginText();
-            contentStream.newLineAtOffset(currentX, currentY);
+            contentStream.setFont(fontRegular, 12);
+            contentStream.newLineAtOffset(currentXTable - 28, currentYTable + 5);
             contentStream.showText(String.valueOf(product.getQuantity()));
             contentStream.endText();
-            currentX += columnWidths[2] * (tableWidth / 14);
+            currentXTable += 1.1 * columnWidths[2] * (tableWidth / 14); // adjust the X position
 
             contentStream.beginText();
-            contentStream.newLineAtOffset(currentX, currentY);
+            contentStream.setFont(fontRegular, 12);
+            contentStream.newLineAtOffset(currentXTable - 50, currentYTable + 5);
             contentStream.showText(String.valueOf(product.getTotal()));
             contentStream.endText();
-            currentX += columnWidths[3] * (tableWidth / 14);
+            currentXTable += 1 * columnWidths[3] * (tableWidth / 14); // adjust the X position
         }
 
-        //footer
-        currentY -= rowHeight;
-        currentX = margin;
-
+        // draw footer
+        currentYTable -= (2 * rowHeight); // add an extra row height for more space
+        currentXTable = margin;
+        contentStream.setNonStrokingColor(Color.WHITE);
+        contentStream.addRect(currentXTable, currentYTable, tableWidth, rowHeight);
+        contentStream.fill();
+        contentStream.setNonStrokingColor(Color.BLACK);
         contentStream.beginText();
-        contentStream.newLineAtOffset(currentX, currentY);
-        contentStream.showText("Total:");
+        contentStream.setFont(font, 12);
+        contentStream.newLineAtOffset(currentXTable + 5, currentYTable + 5);
+        contentStream.showText("Total: " + invoice.getTotal() + " lei");
         contentStream.endText();
-
-        currentX += columnWidths[0] * (tableWidth / 10);
-
-        contentStream.beginText();
-        contentStream.newLineAtOffset(currentX, currentY);
-        contentStream.showText("");
-        contentStream.endText();
-
-        currentX += columnWidths[1] * (tableWidth / 10);
-
-//        contentStream.beginText();
-//        contentStream.newLineAtOffset(currentX, currentY);
-//        contentStream.showText(Integer.toString(totalQuantity));
-//        contentStream.endText();
-//
-//        currentX += columnWidths[2] * (tableWidth / 10);
-//
-//        contentStream.beginText();
-//        contentStream.newLineAtOffset(currentX, currentY);
-//        contentStream.showText(Float.toString(totalValue));
-//        contentStream.endText();
-
 
         // Close the content stream and save the PDF
         contentStream.close();
