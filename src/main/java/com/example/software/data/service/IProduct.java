@@ -17,6 +17,8 @@ public interface IProduct {
 
     ProductDTO addProduct(ProductDTO productDto);
 
+    List<Product> getLowQuantityProducts();
+
     ProductDTO getProductById(Long id);
 
     ProductDTO update(ProductDTO productDto);

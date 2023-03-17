@@ -46,6 +46,17 @@ public class ProductService implements IProduct {
         return null;
     }
 
+
+    @Override
+    public List<Product> getLowQuantityProducts() {
+        try {
+            return productRepository.findLowStockProducts();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
     @Override
     public ProductDTO getProductById(Long id) throws NoSuchElementException {
        return productRepository
@@ -53,7 +64,6 @@ public class ProductService implements IProduct {
                 .map (productMapper::toDto)
                 .orElseThrow (NoSuchElementException::new);
     }
-
 
     @Override
     public ProductDTO update(ProductDTO productDto) {

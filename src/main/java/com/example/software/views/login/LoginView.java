@@ -9,7 +9,6 @@ import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.login.LoginForm;
 import com.vaadin.flow.component.login.LoginI18n;
-import com.vaadin.flow.component.login.LoginOverlay;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
@@ -115,15 +114,15 @@ public class LoginView extends VerticalLayout implements BeforeEnterObserver {
     }
 
     @Override
-    public void beforeEnter (BeforeEnterEvent event){
-        if (authenticatedUser.get ()
-                .isPresent ()) {
+    public void beforeEnter (BeforeEnterEvent event) {
+        if (authenticatedUser.get()
+                .isPresent()) {
             // Already logged in
-            event.forwardTo ("about");
+            event.forwardTo("invoice");
         }
-        loginForm.setError (event.getLocation ()
-                .getQueryParameters ()
-                .getParameters ()
-                .containsKey ("error"));
+        loginForm.setError(event.getLocation()
+                .getQueryParameters()
+                .getParameters()
+                .containsKey("error"));
     }
 }
