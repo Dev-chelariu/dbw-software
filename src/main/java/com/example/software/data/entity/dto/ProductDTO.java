@@ -26,7 +26,7 @@ public class ProductDTO {
     private String description;
 
     @JsonProperty(value = "UNIT_MEASURE")
-    private UM unitMeasure = UM.BUG;
+    private UM unitMeasure = UM.PIECE;
 
     @JsonProperty(value = "STOCK_COUNT")
     private int stockCount = 0;

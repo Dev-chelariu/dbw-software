@@ -1,7 +1,7 @@
 package com.example.software.data.entity.enums;
 
 public enum UM {
-    BUG ("Buc"), KG ("Kg"), SET ("Set");
+    PIECE ("Piece"), KG ("Kg"), SET ("Set");
 
     private final String name;
 
