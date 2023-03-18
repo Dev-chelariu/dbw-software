@@ -5,12 +5,12 @@ public enum Availability {
 
     private final String name;
 
-    private Availability(String name) {
+     Availability(String name) {
         this.name = name;
     }
 
     @Override
     public String toString() {
-        return name;
+        return name().charAt(0) + name().substring(1).toLowerCase();
     }
 }
