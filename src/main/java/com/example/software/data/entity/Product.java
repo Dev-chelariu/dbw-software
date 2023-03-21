@@ -25,9 +25,10 @@ public class Product implements Serializable {
 
     @Id
     @EqualsAndHashCode.Include
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.AUTO, generator = "product_seq_gen")
+    @SequenceGenerator(name = "product_seq_gen", sequenceName = "product_sequence", initialValue = 15)
     @Column(name = "cod_product")
-    private Long codProduct =-1L;
+    private Long codProduct;
 
     @Size(min = 2, message = "Product name must have at least two characters")
     @NotNull

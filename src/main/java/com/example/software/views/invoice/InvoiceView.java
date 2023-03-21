@@ -85,6 +85,8 @@ public class InvoiceView extends Div {
                 .bind(Invoice::getName, Invoice::setName);
 
         cBinder.bind(invoiceDate, Invoice::getInvoiceDate, Invoice::setInvoiceDate);
+
+
         cBinder.bind(totalText, Invoice::getTotal, Invoice::setTotal);
 
         Binder<Customer> custBinder = new BeanValidationBinder<>(Customer.class);
@@ -222,6 +224,7 @@ public class InvoiceView extends Div {
 
         // Set the Date for the DatePicker
         invoiceDate.setLabel("Invoice Date");
+        invoiceDate.setRequired(true);
         invoiceDate.addValueChangeListener(event -> {
             LocalDate selectedDate = event.getValue();
             if (selectedDate != null && selectedDate.isAfter(LocalDate.now())) {
