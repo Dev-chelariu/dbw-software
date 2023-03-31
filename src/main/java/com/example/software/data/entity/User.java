@@ -37,14 +37,6 @@ public class User extends AbstractEntity {
         this.hashedPassword = hashedPassword;
         this.roles = roles;
     }
-//
-//    public User(String username, String name, String hashedPassword, Set<Role> roles, byte[] profilePicture) {
-//        this.username = username;
-//        this.name = name;
-//        this.hashedPassword = hashedPassword;
-//        this.roles = roles;
-//        this.profilePicture = profilePicture;
-//    }
     public Set<Role> getRoles() {
         return roles;
     }

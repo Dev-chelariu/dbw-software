@@ -23,7 +23,6 @@ public class ServiceHealth {
 
     private String theme;
 
-
     public ServiceHealth(Status status, String service, int input, int output) {
         this.status = status;
         this.service = service;
